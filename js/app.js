@@ -56,21 +56,49 @@
   };
 
   // ------------------ CARDS ------------------
-  const canDelete = (p) => isAdmin() || (getCurrentUser() && getCurrentUser() === p.seller);
+const canDelete = (p) => isAdmin() || (getCurrentUser() && getCurrentUser() === p.seller);
 
-  const card = (p, compact = false) => {
-    const div = document.createElement("div");
-    div.className = compact ? "card compact" : "card";
-    div.innerHTML = `
-      <div class="thumb"><img src="${escapeHtml((p.images || [])[0] || PLACEHOLDER_IMG)}" /></div>
-      <div class="title">${escapeHtml(p.title)} ${p.pinned ? "📌" : ""}</div>
-      <div class="price">${p.price ? "Rs. " + numberWithCommas(p.price) : "FREE"}</div>
-      ${compact ? "" : `<div class="actions">
+const card = (p, compact = false) => {
+  const div = document.createElement("div");
+  div.className = compact ? "card compact" : "card";
+  div.innerHTML = `
+    <div class="thumb"><img src="${escapeHtml((p.images || [])[0] || PLACEHOLDER_IMG)}" /></div>
+    <div class="title">${escapeHtml(p.title)} ${p.pinned ? "📌" : ""}</div>
+    <div class="price">${p.price ? "Rs. " + numberWithCommas(p.price) : "FREE"}</div>
+    ${compact
+      ? `<button class="view-btn">View</button>`   /* ✅ show button for pinned */
+      : `<div class="actions">
           <button class="btn view">View</button>
           ${canDelete(p) ? `<button class="btn delete">Delete</button>` : ""}
           ${isAdmin() ? `<button class="btn ${p.pinned ? "unpin" : "pin"}">${p.pinned ? "Unpin" : "Pin"}</button>` : ""}
         </div>`}
-    `;
+  `;
+
+  // View (normal + compact)
+  div.querySelector(".view")?.addEventListener("click", () => showModal(p));
+  div.querySelector(".view-btn")?.addEventListener("click", () => showModal(p));
+
+  // Delete
+  div.querySelector(".delete")?.addEventListener("click", () => {
+    if (confirm("Delete this ad?")) {
+      const list = getAllProducts().filter((x) => x.id !== p.id);
+      saveProducts(list); renderAll();
+    }
+  });
+
+  // Pin / Unpin
+  div.querySelector(".pin")?.addEventListener("click", () => {
+    const list = getAllProducts().map((x) => x.id === p.id ? { ...x, pinned: true } : x);
+    saveProducts(list); renderAll();
+  });
+  div.querySelector(".unpin")?.addEventListener("click", () => {
+    const list = getAllProducts().map((x) => x.id === p.id ? { ...x, pinned: false } : x);
+    saveProducts(list); renderAll();
+  });
+
+  return div;
+};
+
 
     // View
     div.querySelector(".view")?.addEventListener("click", () => showModal(p));
