@@ -56,7 +56,6 @@
       </a>
       <nav class="nav">
         <a href="index.html" class="nav-link">Home</a>
-        <a href="login.html" class="nav-link">Login</a>
         <a href="sell.html" class="nav-link cta">Post Ad</a>
         <span id="auth-links"></span>
       </nav>
@@ -155,6 +154,24 @@
           }
         ];
         localStorage.setItem("nb_products_v1", JSON.stringify(demoProducts));
+      }
+
+      // auth state handling
+      const authLinks = document.getElementById("auth-links");
+      const user = localStorage.getItem("nb_logged_in_user");
+
+      if (user) {
+        authLinks.innerHTML = `
+          <span>Welcome, <b>${user}</b></span> |
+          <a href="#" id="logout-btn" class="nav-link">Logout</a>
+        `;
+        document.getElementById("logout-btn").addEventListener("click", (e) => {
+          e.preventDefault();
+          localStorage.removeItem("nb_logged_in_user");
+          location.reload();
+        });
+      } else {
+        authLinks.innerHTML = `<a href="login.html" class="nav-link">Login</a>`;
       }
     });
   </script>
