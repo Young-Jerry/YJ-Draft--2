@@ -16,7 +16,7 @@
   <script src="js/product-data.js"></script>
 </head>
 <body>
-  <!-- Header -->
+  <!-- ===== HEADER ===== -->
   <header class="site-header">
     <div class="container header-inner">
       <a href="index.html" class="brand">
@@ -38,7 +38,7 @@
     </div>
   </header>
 
-  <!-- Hero (KEEP THIS ONE, REMOVE DUPLICATES) -->
+  <!-- ===== HERO ===== -->
   <section id="hero" class="hero">
     <div class="container hero-inner">
       <div class="brand-line">XtraSupermarket</div>
@@ -53,44 +53,29 @@
     </div>
   </section>
 
-  <!-- ===== HOME GRID ===== -->
-  <section class="section">
-    <div class="container">
-      <h2>Latest Listings</h2>
-      <div id="home-grid" class="grid"></div>
-    </div>
-  </section>
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="container main-grid">
+    <!-- Listings -->
+    <section class="content">
+      <div class="section-head"><h2>Latest Listings</h2></div>
+      <div id="home-grid" class="card-grid"></div>
+    </section>
 
-  <!-- ===== PRODUCTS PAGE ===== -->
-  <section class="section">
-    <div class="container">
-      <h2>Browse All Products</h2>
-
-      <!-- 🔍 FILTERS -->
-      <div class="filters">
-        <input type="text" id="search-box" placeholder="Search ads..." />
-        <select id="filter-category">
-          <option value="">All Categories</option>
-          <option value="Electronics">Electronics</option>
-          <option value="Clothing">Clothing</option>
-          <option value="Books">Books</option>
-          <option value="Furniture">Furniture</option>
-        </select>
-        <input type="number" id="filter-min" placeholder="Min Price" />
-        <input type="number" id="filter-max" placeholder="Max Price" />
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="ad-slot">
+        <img src="assets/images/ad1.jpg" alt="Ad 1" onerror="this.style.display='none'" />
       </div>
-
-      <div id="products-grid" class="grid"></div>
-    </div>
-  </section>
-
-  <!-- ===== PROFILE PAGE ===== -->
-  <section id="profile-page" class="section">
-    <div class="container">
-      <h2>My Listings</h2>
-      <div id="profile-listings" class="grid"></div>
-    </div>
-  </section>
+      <div class="ad-slot">
+        <img src="assets/images/ad2.jpg" alt="Ad 2" onerror="this.style.display='none'" />
+      </div>
+      <div class="sidebar-card">
+        <h3>Post quickly</h3>
+        <p class="muted">List your item in under a minute. Add photos & contact details so buyers can reach you directly.</p>
+        <a class="btn btn-primary" href="sell.html">Create Listing</a>
+      </div>
+    </aside>
+  </main>
 
   <!-- ===== MODAL ===== -->
   <div id="nb-modal" class="modal">
@@ -100,7 +85,7 @@
     </div>
   </div>
 
-  <!-- Footer -->
+  <!-- ===== FOOTER ===== -->
   <footer class="site-footer">
     <div class="container footer-inner">
       <div>© <span id="year"></span> <span class="site-name"></span>. Made with ❤️ in Nepal.</div>
@@ -109,7 +94,7 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="js/app.js"></script>
+  <script src="app.js"></script>
   <script src="js/nb-fixes.js"></script>
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
