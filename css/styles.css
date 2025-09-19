@@ -183,3 +183,8 @@ a,p,li,label,input,select,textarea,.muted,.title,.meta,.brand-sub { color:#e6f0f
   .main-grid { grid-template-columns:1fr; gap:12px; }
   .hero h1 { font-size:2.2rem; }
 }
+/* Ensure hero never flashes away */
+.hero {
+  display: block !important;
+  visibility: visible !important;
+}
