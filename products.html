@@ -10,6 +10,37 @@
 
   <!-- Styles -->
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Filters layout fix */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .controls .input,
+    .controls .select {
+      padding: 8px 12px;
+      border: 1px solid #444;
+      border-radius: 6px;
+      background: #111;
+      color: #fff;
+      min-width: 180px;
+      flex: 1;
+    }
+
+    /* Ad hover animation */
+    .ad-slot img {
+      width: 100%;
+      border-radius: 10px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .ad-slot img:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+  </style>
 </head>
 <body class="dark-bg">
 
@@ -25,9 +56,9 @@
       </a>
       <nav class="nav">
         <a href="index.html" class="nav-link">Home</a>
-        <a href="products.html" class="nav-link">Products</a>
-        <a href="contact.html" class="nav-link">Contact</a>
+        <a href="login.html" class="nav-link">Login</a>
         <a href="sell.html" class="nav-link cta">Post Ad</a>
+        <span id="auth-links"></span>
       </nav>
     </div>
   </header>
@@ -39,10 +70,16 @@
       <div class="section-head">
         <h2>All Listings</h2>
         <div class="controls">
-          <input id="search-products" class="input" placeholder="Search by title, location, or seller">
-          <select id="filter-category" class="select"></select>
+          <input id="search-box" class="input" placeholder="Search by title, location, or seller">
+          <select id="filter-category" class="select">
+            <option value="">All Categories</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Sports">Sports</option>
+            <option value="Music">Music</option>
+          </select>
           <select id="filter-sort" class="select">
-            <option value="new">Newest</option>
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
             <option value="price-asc">Price: Low → High</option>
             <option value="price-desc">Price: High → Low</option>
           </select>
@@ -87,7 +124,7 @@
   <script>
     // preload demo products if storage empty
     document.addEventListener("DOMContentLoaded", () => {
-      if (!localStorage.getItem("nb_products")) {
+      if (!localStorage.getItem("nb_products_v1")) {
         const demoProducts = [
           {
             title: "Apple iPhone 14",
@@ -106,9 +143,18 @@
             category: "Sports",
             seller: "demo",
             images: ["assets/images/bike.jpg"]
+          },
+          {
+            title: "Guitar",
+            description: "Acoustic, great condition.",
+            price: 8000,
+            currency: "Rs.",
+            category: "Music",
+            seller: "demo",
+            images: ["assets/images/guitar.jpg"]
           }
         ];
-        localStorage.setItem("nb_products", JSON.stringify(demoProducts));
+        localStorage.setItem("nb_products_v1", JSON.stringify(demoProducts));
       }
     });
   </script>
