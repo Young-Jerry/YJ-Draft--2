@@ -194,31 +194,84 @@ body {
 }
 
 /* === Forms (Login, Sell) === */
+.form-wrapper {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: rgba(255,255,255,0.03);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.form-wrapper h2 {
+  font-family: "Orbitron", sans-serif;
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  color: #fff;
+  text-align: center;
+}
+
+.form-wrapper p {
+  text-align: center;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+
 form {
+  display: grid;
+  gap: 1.2rem;
+}
+
+form label {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  background: rgba(255,255,255,0.03);
-  padding: 20px;
-  border-radius: 14px;
-  box-shadow: var(--shadow);
+  font-weight: 600;
+  color: #ccc;
 }
-form label { font-weight: 600; margin-bottom: 4px; }
-form input, form select, form textarea {
+
+form input,
+form select,
+form textarea {
+  margin-top: 6px;
   padding: 12px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.2);
-  background: #0e1528;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
   color: #fff;
   font-size: 1rem;
-  transition: border 0.25s, box-shadow 0.25s;
+  transition: border 0.25s, box-shadow 0.25s, background 0.25s;
 }
-form input:focus, form select:focus, form textarea:focus {
+
+form input:focus,
+form select:focus,
+form textarea:focus {
   border-color: var(--neon-1);
   box-shadow: 0 0 10px var(--neon-1);
+  background: rgba(0,230,255,0.08);
   outline: none;
 }
-form .btn { margin-top: 10px; }
+
+form textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Align action buttons */
+.form-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.form-actions .btn {
+  flex: 1;
+  max-width: 200px;
+  text-align: center;
+}
+
 
 /* === Footer === */
 .site-footer {
