@@ -211,3 +211,21 @@ body {
   transform: scale(1.05);
   box-shadow: 0 0 20px rgba(0,255,150,0.6);
 }
+
+.filters-bar {
+  display: flex;
+  gap: 10px;             /* spacing between elements */
+  margin: 15px 0;        /* space above/below */
+  flex-wrap: wrap;       /* allows wrapping on small screens */
+}
+
+.filters-bar input,
+.filters-bar select {
+  padding: 8px 10px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #111;
+  color: #fff;
+  flex: 1;               /* make them responsive */
+  min-width: 160px;
+}
