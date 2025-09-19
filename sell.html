@@ -36,9 +36,9 @@
 
   <!-- Main -->
   <main class="container">
-    <section class="sell-card">
+    <div class="form-wrapper">
       <h2>Create a Listing</h2>
-      <p class="muted">No buyers here — only contact details will be shown. Add clear photos and a valid contact method.</p>
+      <p>No buyers here — only contact details will be shown. Add clear photos and a valid contact method.</p>
 
       <form id="sell-form">
         <label>Title
@@ -46,7 +46,7 @@
         </label>
 
         <label>Category
-          <select name="category" class="input">
+          <select name="category" class="input" required>
             <option value="">Select Category</option>
             <option>Electronics</option>
             <option>Vehicles</option>
@@ -89,14 +89,14 @@
           <input name="expiryDate" id="expiryDate" type="date" required class="input" />
         </label>
 
-        <div class="form-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
+        <div class="form-actions">
           <button type="submit" class="btn btn-primary">Publish Listing</button>
           <button type="reset" class="btn btn-ghost">Reset</button>
         </div>
 
         <p id="sell-msg" class="muted small"></p>
       </form>
-    </section>
+    </div>
   </main>
 
   <!-- Footer -->
@@ -122,11 +122,7 @@
         window.location.href = 'login.html';
         return;
       }
-
-      // The rest (province/city dropdown) is done via app.js initSellForm()
-
-      // Header auth-links is handled by app.js
-
+      // Province/City dropdown handled by app.js
     });
   </script>
 </body>
