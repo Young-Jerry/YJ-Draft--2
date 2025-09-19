@@ -1,5 +1,5 @@
 /* ==========================================================================
-   app.js – Stable Controller for Nepali Bazar (2025 rewrite)
+   app.js – Stable Controller for Nepali Bazar (2025 rewrite + Sell integration)
    ========================================================================== */
 
 (function () {
@@ -224,10 +224,53 @@
     renderHeroPinned();
   };
 
+  // ------------------ SELL FORM HANDLER ------------------
+  const initSellForm = () => {
+    const form = $("#sell-form");
+    if (!form) return;
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+
+      const images = [];
+      const files = fd.getAll("images");
+      for (let f of files) {
+        if (f && f.type.startsWith("image/")) {
+          images.push(URL.createObjectURL(f));
+        }
+      }
+
+      const product = {
+        title: fd.get("title"),
+        category: fd.get("category"),
+        price: parseFloat(fd.get("price") || 0),
+        province: fd.get("province"),
+        city: fd.get("city"),
+        contact: fd.get("contact"),
+        description: fd.get("description"),
+        expiryDate: fd.get("expiryDate"),
+        images,
+        seller: getCurrentUser(),
+        pinned: false,
+      };
+
+      addProduct(product);
+
+      const msg = $("#sell-msg");
+      if (msg) {
+        msg.textContent = "✅ Listing published successfully!";
+        msg.style.color = "limegreen";
+      }
+      form.reset();
+    });
+  };
+
   // ------------------ INIT ------------------
   document.addEventListener("DOMContentLoaded", () => {
     ensureDefaultUsers();
     initAuthUI();
+    initSellForm();
     renderAll();
     window.NB_LOGOUT = () => {
       logoutUser();
