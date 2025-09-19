@@ -1,26 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nepali Bazar</title>
-  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
   <!-- Header -->
   <header class="site-header">
     <div class="container header-inner">
       <a href="index.html" class="brand">
-        <div class="logo">YJ</div>
-        <div>
+        <div class="logo">NB</div>
+        <div class="brand-text">
           <div class="brand-title">Nepali Bazar</div>
           <div class="brand-sub">Buy · Sell · Connect</div>
         </div>
       </a>
+
       <nav class="nav">
         <a href="products.html" class="nav-link">Shop</a>
         <a href="sell.html" class="nav-link cta">Post Ad</a>
-        <span id="auth-links"></span>
+        <!-- Auth Links -->
+        <a href="login.html" id="login-link" class="nav-link">Login</a>
+        <span id="user-info" class="nav-link" style="display:none;">
+          Hi, <span id="username-display"></span> |
+          <a href="#" id="logout-btn" class="nav-link">Logout</a> |
+          <a href="profile.html" id="profile-link" class="nav-link">Profile</a>
+        </span>
       </nav>
     </div>
   </header>
@@ -61,19 +73,17 @@
     <aside class="sidebar">
       <div class="ad-slot">
         <a href="https://www.google.com" target="_blank">
-          <img src="assets/images/ad1.jpg" alt="Ad 1" class="ad-img">
+          <img src="assets/images/ad1.jpg" alt="Ad 1" class="ad-img" />
         </a>
       </div>
       <div class="ad-slot">
         <a href="https://www.google.com" target="_blank">
-          <img src="assets/images/ad2.jpg" alt="Ad 2" class="ad-img">
+          <img src="assets/images/ad2.jpg" alt="Ad 2" class="ad-img" />
         </a>
       </div>
       <div class="sidebar-card">
         <h3>Start Selling Now</h3>
-        <br>
         <p>Find your buyer right away. Completely for free.</p>
-        <br>
         <a href="sell.html" class="btn btn-ghost">Start Selling</a>
       </div>
     </aside>
@@ -82,11 +92,11 @@
   <!-- Footer -->
   <footer class="site-footer">
     <div class="container footer-inner">
-      <p class="muted">© 2025 Nepali Bazar · All rights reserved.</p>
+      <p class="muted">© <span id="year"></span> Nepali Bazar · All rights reserved.</p>
     </div>
   </footer>
 
-  <!-- Modal placeholder -->
+  <!-- Modal -->
   <div id="nb-modal" class="nb-modal">
     <div class="nb-modal-content">
       <div id="nb-modal-body"></div>
@@ -95,24 +105,32 @@
   </div>
 
   <!-- Scripts -->
-  <script src="app.js"></script>
+  <script src="js/app.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const authLinks = document.getElementById("auth-links");
+      // Footer year
+      const yr = document.getElementById("year");
+      if (yr) yr.textContent = new Date().getFullYear();
+
+      // Auth handling (in case app.js doesn’t load)
       const user = localStorage.getItem("nb_logged_in_user");
+      const loginLink = document.getElementById("login-link");
+      const userInfo = document.getElementById("user-info");
+      const usernameDisplay = document.getElementById("username-display");
 
       if (user) {
-        authLinks.innerHTML = `
-          <span>Welcome, <b>${user}</b></span> |
-          <a href="#" id="logout-btn" class="nav-link">Logout</a>
-        `;
+        loginLink.style.display = "none";
+        userInfo.style.display = "inline-block";
+        usernameDisplay.textContent = user;
+
         document.getElementById("logout-btn").addEventListener("click", (e) => {
           e.preventDefault();
           localStorage.removeItem("nb_logged_in_user");
           location.reload();
         });
       } else {
-        authLinks.innerHTML = `<a href="login.html" class="nav-link">Login</a>`;
+        loginLink.style.display = "inline-block";
+        userInfo.style.display = "none";
       }
     });
   </script>
