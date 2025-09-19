@@ -339,3 +339,81 @@ form textarea { resize: vertical; min-height: 100px; }
   .btn { padding: 0.7rem 1.2rem; }
   form { padding: 16px; }
 }
+/* === Uniform Background Helper === */
+.uniform-bg {
+  background: linear-gradient(180deg, var(--bg-1), var(--bg-2));
+  min-height: 100%;
+  width: 100%;
+}
+
+/* === Header Search Box === */
+#header-search {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  font-size: 0.95rem;
+  transition: border 0.25s, box-shadow 0.25s;
+}
+#header-search:focus {
+  border-color: var(--neon-1);
+  box-shadow: 0 0 10px var(--neon-1);
+  outline: none;
+}
+
+/* === Modal === */
+.nb-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.nb-modal-content {
+  background: rgba(15, 20, 35, 0.95);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 2rem;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+  animation: modalIn 0.3s ease forwards;
+}
+.nb-modal-content h2 {
+  font-family: "Orbitron", sans-serif;
+  margin-bottom: 1rem;
+  font-size: 1.6rem;
+  color: #fff;
+}
+.nb-modal-content img {
+  width: 100%;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+.nb-modal-content p {
+  margin-bottom: 0.8rem;
+}
+.nb-modal-content .close {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  background: var(--neon-1);
+  color: #041026;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+.nb-modal-content .close:hover {
+  background: var(--neon-2);
+  color: #fff;
+}
+
+@keyframes modalIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
