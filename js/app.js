@@ -1,13 +1,5 @@
 /* ==========================================================================
-   app.js – Core Controller for Nepali Bazar (2025 clean rewrite)
-   ==========================================================================
-   ✅ LocalStorage: products & users (never lose expired ads)
-   ✅ Auth: handles all header variants, login/logout/profile link
-   ✅ Products: add, delete, pin/unpin, expiry checks
-   ✅ Hero: up to 5 latest pinned ads, neat layout
-   ✅ Cards: normal vs compact (hero)
-   ✅ Modal: fallback-safe
-   ✅ Rendering: home, products, profile, pinned hero
+   app.js – Stable Controller for Nepali Bazar (2025 rewrite)
    ========================================================================== */
 
 (function () {
@@ -17,13 +9,7 @@
   const STORAGE_KEY = "nb_products_v2";
   const USERS_KEY = "nb_users_v1";
   const LOGGED_IN_KEY = "nb_logged_in_user";
-  const MAX_EXPIRY_DAYS = 7;
   const PLACEHOLDER_IMG = "assets/images/placeholder.jpg";
-
-  const AD_DEFS = [
-    { img: "assets/images/ad1.jpg", url: "https://www.google.com" },
-    { img: "assets/images/ad2.jpg", url: "https://www.google.com" },
-  ];
 
   // ------------------ HELPERS ------------------
   const $ = (s, p = document) => p.querySelector(s);
@@ -40,13 +26,7 @@
     return new Date(d.getFullYear(), d.getMonth(), d.getDate());
   };
 
-  const parseDate = (d) => {
-    try {
-      return new Date(d.split("T")[0] + "T00:00:00");
-    } catch {
-      return new Date(d);
-    }
-  };
+  const parseDate = (d) => (d ? new Date(d.split("T")[0] + "T00:00:00") : null);
 
   const nowIso = () => {
     const d = new Date();
@@ -62,7 +42,6 @@
       return fb;
     }
   };
-
   const writeJSON = (k, v) => {
     try {
       localStorage.setItem(k, JSON.stringify(v));
@@ -70,13 +49,12 @@
   };
 
   const getAllProducts = () => readJSON(STORAGE_KEY, []);
+  const saveProducts = (list) => writeJSON(STORAGE_KEY, list);
 
   const getActiveProducts = () =>
     getAllProducts().filter(
       (p) => !p.expiryDate || parseDate(p.expiryDate) >= todayMidnight()
     );
-
-  const saveProducts = (list) => writeJSON(STORAGE_KEY, list);
 
   const addProduct = (p) => {
     const list = getAllProducts();
@@ -89,61 +67,46 @@
   // ------------------ USERS ------------------
   const ensureDefaultUsers = () => {
     const users = readJSON(USERS_KEY, []);
-    if (users.length) return;
-    writeJSON(USERS_KEY, [
-      { username: "sohaum", password: "sohaum", role: "admin" },
-      { username: "sneha", password: "sneha", role: "user" },
-    ]);
+    if (!users.length) {
+      writeJSON(USERS_KEY, [
+        { username: "sohaum", password: "sohaum", role: "admin" },
+        { username: "sneha", password: "sneha", role: "user" },
+      ]);
+    }
   };
 
   const getCurrentUser = () => localStorage.getItem(LOGGED_IN_KEY);
-  const setCurrentUser = (u) => localStorage.setItem(LOGGED_IN_KEY, u);
   const logoutUser = () => localStorage.removeItem(LOGGED_IN_KEY);
 
   const isAdmin = () => {
     const u = getCurrentUser();
-    return readJSON(USERS_KEY, []).some((usr) => usr.username === u && usr.role === "admin");
+    return readJSON(USERS_KEY, []).some(
+      (usr) => usr.username === u && usr.role === "admin"
+    );
   };
 
   // ------------------ AUTH UI ------------------
   const initAuthUI = () => {
     const user = getCurrentUser();
 
-    // Variant 1: #auth-links
-    const authLinks = $("#auth-links");
-    if (authLinks) {
-      authLinks.innerHTML = user
-        ? `Hi, ${escapeHtml(user)} <button id="logout-small" class="btn">Logout</button>`
-        : `<a href="login.html" class="nav-link">Login</a>`;
-      $("#logout-small")?.addEventListener("click", () => {
-        logoutUser();
-        location.reload();
-      });
-    }
-
-    // Variant 2: #user-info
+    const loginLink = $("#login-link");
     const userInfo = $("#user-info");
-    if (userInfo) {
-      $("#username-display").textContent = user || "";
-      userInfo.style.display = user ? "inline" : "none";
-      $("#login-link") && ($("#login-link").style.display = user ? "none" : "inline");
-      $("#logout-btn")?.addEventListener("click", (e) => {
-        e.preventDefault();
-        logoutUser();
-        location.reload();
-      });
-    }
+    const usernameDisplay = $("#username-display");
 
-    // Always ensure Profile link
-    const nav = $(".nav");
-    if (nav && !$("#profile-link")) {
-      const a = document.createElement("a");
-      a.id = "profile-link";
-      a.className = "nav-link";
-      a.href = "profile.html";
-      a.textContent = "Profile";
-      nav.appendChild(a);
-      a.style.display = user ? "inline" : "none";
+    if (loginLink && userInfo && usernameDisplay) {
+      if (user) {
+        loginLink.style.display = "none";
+        userInfo.style.display = "inline-block";
+        usernameDisplay.textContent = user;
+        $("#logout-btn")?.addEventListener("click", (e) => {
+          e.preventDefault();
+          logoutUser();
+          location.reload();
+        });
+      } else {
+        loginLink.style.display = "inline-block";
+        userInfo.style.display = "none";
+      }
     }
   };
 
@@ -154,8 +117,9 @@
   const card = (p, compact = false) => {
     const div = document.createElement("div");
     div.className = compact ? "card compact" : "card";
+
     div.innerHTML = `
-      <div class="thumb"><img src="${escapeHtml((p.images||[])[0]||PLACEHOLDER_IMG)}" /></div>
+      <div class="thumb"><img src="${escapeHtml((p.images || [])[0] || PLACEHOLDER_IMG)}" /></div>
       <div class="title">${escapeHtml(p.title)} ${p.pinned ? "📌" : ""}</div>
       <div class="price">${p.price ? "Rs. " + numberWithCommas(p.price) : "FREE"}</div>
       ${
@@ -169,22 +133,31 @@
       }
     `;
 
+    // View
     div.querySelector(".view")?.addEventListener("click", () => showModal(p));
+
+    // Delete
     div.querySelector(".delete")?.addEventListener("click", () => {
-      if (confirm("Delete?")) {
+      if (confirm("Delete this ad?")) {
         const list = getAllProducts().filter((x) => x.id !== p.id);
         saveProducts(list);
         renderAll();
       }
     });
+
+    // Pin / Unpin
     div.querySelector(".pin")?.addEventListener("click", () => {
-      p.pinned = true;
-      saveProducts([...getAllProducts()]);
+      const list = getAllProducts().map((x) =>
+        x.id === p.id ? { ...x, pinned: true } : x
+      );
+      saveProducts(list);
       renderAll();
     });
     div.querySelector(".unpin")?.addEventListener("click", () => {
-      p.pinned = false;
-      saveProducts([...getAllProducts()]);
+      const list = getAllProducts().map((x) =>
+        x.id === p.id ? { ...x, pinned: false } : x
+      );
+      saveProducts(list);
       renderAll();
     });
 
@@ -197,20 +170,23 @@
     if (!modal) {
       modal = document.createElement("div");
       modal.id = "nb-modal";
-      modal.className = "modal";
+      modal.className = "nb-modal";
       document.body.appendChild(modal);
     }
     modal.innerHTML = `
-      <div class="modal-content">
-        <button class="close">✕</button>
-        <h2>${escapeHtml(p.title)}</h2>
-        <img src="${escapeHtml((p.images||[])[0]||PLACEHOLDER_IMG)}" />
-        <p>${escapeHtml(p.description || "")}</p>
-        <p><b>Contact:</b> ${escapeHtml(p.contact || "N/A")}</p>
+      <div class="nb-modal-content">
+        <div id="nb-modal-body">
+          <h2>${escapeHtml(p.title)}</h2>
+          <img src="${escapeHtml((p.images || [])[0] || PLACEHOLDER_IMG)}" />
+          <p>${escapeHtml(p.description || "")}</p>
+          <p><b>Contact:</b> ${escapeHtml(p.contact || "N/A")}</p>
+        </div>
+        <button class="close">Close</button>
       </div>
     `;
     modal.style.display = "flex";
-    modal.querySelector(".close").onclick = () => (modal.style.display = "none");
+    modal.querySelector(".close").onclick = () =>
+      (modal.style.display = "none");
     modal.onclick = (e) => e.target === modal && (modal.style.display = "none");
   };
 
@@ -223,29 +199,28 @@
   };
 
   const renderHeroPinned = () => {
-    const heroRight = $(".hero-right");
-    if (!heroRight) return;
+    const pinnedWrap = $("#pinned-ads");
+    if (!pinnedWrap) return;
 
     const pinned = getActiveProducts()
       .filter((p) => p.pinned)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 5);
 
-    heroRight.innerHTML = "";
-    if (pinned.length === 0) {
-      heroRight.innerHTML = `<p class="muted">No pinned ads yet.</p>`;
+    pinnedWrap.innerHTML = "";
+    if (!pinned.length) {
+      pinnedWrap.innerHTML = `<p class="muted">No pinned ads yet.</p>`;
       return;
     }
-
-    const wrap = document.createElement("div");
-    wrap.className = "pinned-grid";
-    pinned.forEach((p) => wrap.appendChild(card(p, true)));
-    heroRight.appendChild(wrap);
+    pinned.forEach((p) => pinnedWrap.appendChild(card(p, true)));
   };
 
   const renderAll = () => {
     renderGrid("#home-grid, .home-grid, #products-grid", getActiveProducts());
-    renderGrid("#profile-listings", getActiveProducts().filter(p => p.seller === getCurrentUser()));
+    renderGrid(
+      "#profile-listings",
+      getActiveProducts().filter((p) => p.seller === getCurrentUser())
+    );
     renderHeroPinned();
   };
 
