@@ -42,7 +42,7 @@
   <main class="container">
     <div class="form-wrapper">
       <h2>Create a Listing</h2>
-      <p>No buyers here — only contact details will be shown. Add clear photos and a valid contact method.</p>
+      <p>Please provide accurate details. Listings expire after 7 days.</p>
 
       <form id="sell-form">
         <label>Title
@@ -62,7 +62,7 @@
         </label>
 
         <label>Price (Rs)
-          <input name="price" type="number" required class="input" placeholder="e.g. 85000" />
+          <input name="price" type="number" required min="0" class="input" placeholder="e.g. 85000" />
         </label>
 
         <label>Province
@@ -115,17 +115,67 @@
   <script src="js/app.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function(){
-      // Set footer year
-      const yr = document.getElementById('year');
-      if(yr) yr.textContent = new Date().getFullYear();
+      // Year
+      document.getElementById('year').textContent = new Date().getFullYear();
 
-      // Enforce login
+      // Require login
       const user = localStorage.getItem('nb_logged_in_user');
       if(!user){
         alert('You must log in to post a listing!');
         window.location.href = 'login.html';
         return;
       }
+
+      // Provinces & Cities
+      const provinces = {
+        "Province 1": ["Biratnagar","Dharan","Itahari","Birtamod"],
+        "Madhesh": ["Janakpur","Birgunj","Kalaiya"],
+        "Bagmati": ["Kathmandu","Lalitpur","Bhaktapur","Hetauda"],
+        "Gandaki": ["Pokhara","Gorkha","Baglung"],
+        "Lumbini": ["Butwal","Bhairahawa","Dang","Nepalgunj"],
+        "Karnali": ["Surkhet","Dailekh","Jumla"],
+        "Sudurpashchim": ["Dhangadhi","Mahendranagar","Dadeldhura"]
+      };
+      const provinceSel = document.getElementById('province');
+      const citySel = document.getElementById('city');
+      Object.keys(provinces).forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p; opt.textContent = p;
+        provinceSel.appendChild(opt);
+      });
+      provinceSel.addEventListener('change', () => {
+        citySel.innerHTML = '<option value="">Select City</option>';
+        (provinces[provinceSel.value] || []).forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c; opt.textContent = c;
+          citySel.appendChild(opt);
+        });
+      });
+
+      // Contact validation
+      const contactInput = document.getElementById('contact-input');
+      contactInput.addEventListener('input', () => {
+        const v = contactInput.value.trim();
+        const phone = /^(97|98)\d{8}$/;
+        const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        contactInput.setCustomValidity(phone.test(v) || email.test(v) ? "" : "Enter valid phone or email");
+      });
+
+      // Expiry date max 7 days
+      const expiry = document.getElementById('expiryDate');
+      const today = new Date();
+      const max = new Date();
+      max.setDate(today.getDate() + 7);
+      expiry.min = today.toISOString().split("T")[0];
+      expiry.max = max.toISOString().split("T")[0];
+
+      // Image upload limit
+      document.getElementById('image-input').addEventListener('change', e => {
+        if(e.target.files.length > 6){
+          alert("You can upload max 6 images.");
+          e.target.value = "";
+        }
+      });
     });
   </script>
 </body>
