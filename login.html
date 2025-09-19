@@ -30,6 +30,7 @@
         <a href="index.html" class="nav-link">Home</a>
         <a href="products.html" class="nav-link">Products</a>
         <a href="sell.html" class="nav-link cta">Sell</a>
+        <span id="auth-links"></span>
       </nav>
     </div>
   </header>
@@ -79,17 +80,34 @@
 
       const loginForm = document.getElementById('login-form');
       const loginMsg = document.getElementById('login-msg');
+      const authLinks = document.getElementById("auth-links");
 
+      // auth UI
+      const user = localStorage.getItem("nb_logged_in_user");
+      if (user) {
+        authLinks.innerHTML = `
+          <span>Welcome, <b>${user}</b></span> |
+          <a href="#" id="logout-btn" class="nav-link">Logout</a>
+        `;
+        document.getElementById("logout-btn").addEventListener("click", (e) => {
+          e.preventDefault();
+          localStorage.removeItem("nb_logged_in_user");
+          location.reload();
+        });
+      } else {
+        authLinks.innerHTML = `<a href="login.html" class="nav-link">Login</a>`;
+      }
+
+      // login form
       loginForm.addEventListener('submit', function(e){
         e.preventDefault();
         const username = this.username.value.trim();
         const password = this.password.value.trim();
 
-        // 🔑 For now, accept any non-empty username/password (remove demo accounts)
         if(username && password){
           localStorage.setItem('nb_logged_in_user', username);
           loginMsg.textContent = "✅ Login successful! Redirecting...";
-          setTimeout(()=>{ window.location.href = "profile.html"; }, 600);
+          setTimeout(()=>{ window.location.href = "index.html"; }, 600);
         } else {
           loginMsg.textContent = "❌ Please enter username and password.";
         }
