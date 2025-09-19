@@ -1,12 +1,12 @@
 /* ==========================================================================
-   app.js – Stable Controller for Nepali Bazar (2025 rewrite + Sell integration)
+   app.js – Stable Controller for Nepali Bazar (2025 rewrite + Base64 storage)
    ========================================================================== */
 
 (function () {
   "use strict";
 
   // ------------------ CONFIG ------------------
-  const STORAGE_KEY = "nb_products_v2";
+  const STORAGE_KEY = "nb_products_v3"; // bumped version since storage format changed
   const USERS_KEY = "nb_users_v1";
   const LOGGED_IN_KEY = "nb_logged_in_user";
   const PLACEHOLDER_IMG = "assets/images/placeholder.jpg";
@@ -45,7 +45,9 @@
   const writeJSON = (k, v) => {
     try {
       localStorage.setItem(k, JSON.stringify(v));
-    } catch {}
+    } catch {
+      alert("⚠️ Storage full! Please delete some listings.");
+    }
   };
 
   const getAllProducts = () => readJSON(STORAGE_KEY, []);
@@ -224,7 +226,7 @@
     renderHeroPinned();
   };
 
-  // ------------------ SELL FORM HANDLER ------------------
+  // ------------------ SELL FORM HANDLER (Base64 storage) ------------------
   const initSellForm = () => {
     const form = $("#sell-form");
     if (!form) return;
@@ -233,36 +235,58 @@
       e.preventDefault();
       const fd = new FormData(form);
 
-      const images = [];
       const files = fd.getAll("images");
-      for (let f of files) {
+      const images = [];
+      let processed = 0;
+
+      if (!files.length) {
+        finalize([]);
+        return;
+      }
+
+      files.forEach((f) => {
         if (f && f.type.startsWith("image/")) {
-          images.push(URL.createObjectURL(f));
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            // limit ~500 KB per image
+            if (ev.target.result.length < 700000) {
+              images.push(ev.target.result);
+            }
+            processed++;
+            if (processed === files.length) finalize(images);
+          };
+          reader.readAsDataURL(f);
+        } else {
+          processed++;
+          if (processed === files.length) finalize(images);
         }
+      });
+
+      function finalize(imgs) {
+        const product = {
+          title: fd.get("title"),
+          category: fd.get("category"),
+          price: parseFloat(fd.get("price") || 0),
+          province: fd.get("province"),
+          city: fd.get("city"),
+          contact: fd.get("contact"),
+          description: fd.get("description"),
+          expiryDate: fd.get("expiryDate"),
+          images: imgs,
+          seller: getCurrentUser(),
+          pinned: false,
+        };
+
+        addProduct(product);
+
+        const msg = $("#sell-msg");
+        if (msg) {
+          msg.textContent = "✅ Listing published successfully!";
+          msg.style.color = "limegreen";
+        }
+        form.reset();
+        renderAll();
       }
-
-      const product = {
-        title: fd.get("title"),
-        category: fd.get("category"),
-        price: parseFloat(fd.get("price") || 0),
-        province: fd.get("province"),
-        city: fd.get("city"),
-        contact: fd.get("contact"),
-        description: fd.get("description"),
-        expiryDate: fd.get("expiryDate"),
-        images,
-        seller: getCurrentUser(),
-        pinned: false,
-      };
-
-      addProduct(product);
-
-      const msg = $("#sell-msg");
-      if (msg) {
-        msg.textContent = "✅ Listing published successfully!";
-        msg.style.color = "limegreen";
-      }
-      form.reset();
     });
   };
 
