@@ -19,9 +19,7 @@
       overflow-x: auto;
       padding: 8px 0;
     }
-    .pinned-grid::-webkit-scrollbar {
-      display: none;
-    }
+    .pinned-grid::-webkit-scrollbar { display: none; }
     .pinned-grid .card {
       flex: 0 0 160px;
       background: #111;
@@ -30,10 +28,12 @@
       padding: 10px;
       text-align: center;
       color: #fff;
-      transition: transform 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
     }
     .pinned-grid .card:hover {
-      transform: translateY(-3px);
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
     .pinned-grid img {
       max-width: 100%;
@@ -41,6 +41,20 @@
       object-fit: cover;
       border-radius: 8px;
       margin-bottom: 6px;
+    }
+
+    /* Search bar */
+    .search-box {
+      display: inline-block;
+      margin-left: 20px;
+    }
+    .search-box input {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background: #111;
+      color: #fff;
+      min-width: 200px;
     }
   </style>
 </head>
@@ -55,6 +69,11 @@
           <div class="brand-sub">Buy · Sell · Connect</div>
         </div>
       </a>
+
+      <!-- Search -->
+      <form id="home-search-form" class="search-box">
+        <input type="text" id="home-search" placeholder="Search for item..." />
+      </form>
 
       <nav class="nav">
         <a href="products.html" class="nav-link">Shop</a>
@@ -144,8 +163,7 @@
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       // Footer year
-      const yr = document.getElementById("year");
-      if (yr) yr.textContent = new Date().getFullYear();
+      document.getElementById("year").textContent = new Date().getFullYear();
 
       // Auth handling
       const user = localStorage.getItem("nb_logged_in_user");
@@ -163,10 +181,17 @@
           localStorage.removeItem("nb_logged_in_user");
           location.reload();
         });
-      } else {
-        loginLink.style.display = "inline-block";
-        userInfo.style.display = "none";
       }
+
+      // Search form
+      document.getElementById("home-search-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const q = document.getElementById("home-search").value.trim();
+        if (q) {
+          localStorage.setItem("nb_search_query", q);
+          window.location.href = "products.html";
+        }
+      });
     });
   </script>
 </body>
