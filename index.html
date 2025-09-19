@@ -10,6 +10,39 @@
 
   <!-- CSS -->
   <link rel="stylesheet" href="css/styles.css" />
+
+  <style>
+    /* Pinned ads grid */
+    .pinned-grid {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 8px 0;
+    }
+    .pinned-grid::-webkit-scrollbar {
+      display: none;
+    }
+    .pinned-grid .card {
+      flex: 0 0 160px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+      color: #fff;
+      transition: transform 0.2s ease;
+    }
+    .pinned-grid .card:hover {
+      transform: translateY(-3px);
+    }
+    .pinned-grid img {
+      max-width: 100%;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 6px;
+    }
+  </style>
 </head>
 <body>
   <!-- Header -->
@@ -53,7 +86,10 @@
           <a href="sell.html" class="btn btn-ghost">Start Selling</a>
         </div>
       </div>
-      <div class="hero-right"><!-- JS will inject pinned ad here --></div>
+      <div class="hero-right">
+        <h3 class="muted small">Pinned Ads</h3>
+        <div class="pinned-grid" id="pinned-ads"></div>
+      </div>
     </div>
   </section>
 
@@ -112,7 +148,7 @@
       const yr = document.getElementById("year");
       if (yr) yr.textContent = new Date().getFullYear();
 
-      // Auth handling (in case app.js doesn’t load)
+      // Auth handling
       const user = localStorage.getItem("nb_logged_in_user");
       const loginLink = document.getElementById("login-link");
       const userInfo = document.getElementById("user-info");
