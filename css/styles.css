@@ -83,27 +83,38 @@ body::before {
 /* === HERO Section === */
 .hero {
   text-align: center;
-  padding: 80px 20px;
+  padding: 90px 20px 100px;
+}
+.hero .brand-line {
+  font-family:"Orbitron",sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 .hero h1 {
   font-family:"Orbitron",sans-serif;
-  font-size: 2.6rem;
+  font-size: 3rem;
   font-weight: 800;
   background:linear-gradient(90deg,var(--neon-1),var(--neon-2));
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
-  margin: 0 0 14px;
+  margin: 0 0 20px;
 }
 .hero p {
   color: var(--muted);
-  font-size: 1.1rem;
-  max-width: 700px;
-  margin: 0 auto 22px;
+  font-size: 1.15rem;
+  max-width: 720px;
+  margin: 0 auto 26px;
+  line-height: 1.6;
 }
 .hero-buttons {
   display: flex;
-  gap: 14px;
+  gap: 16px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 /* === Features Section === */
@@ -163,11 +174,12 @@ body::before {
 .sidebar-card{padding:12px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px solid rgba(255,255,255,0.03);margin-bottom:12px}
 
 /* === Buttons === */
-.btn{display:inline-block;padding:10px 14px;border-radius:10px;background:transparent;color:#e6f0ff;border:1px solid rgba(255,255,255,0.04);font-weight:700;cursor:pointer;text-decoration:none;transition:transform .18s ease, box-shadow .18s ease}
+.btn{display:inline-block;padding:12px 20px;border-radius:12px;background:transparent;color:#e6f0ff;border:1px solid rgba(255,255,255,0.08);font-weight:700;cursor:pointer;text-decoration:none;transition:transform .18s ease, box-shadow .18s ease}
 .btn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 0 12px var(--neon-1),0 0 24px var(--neon-2)}
 .btn-primary{background:linear-gradient(90deg,var(--neon-1),var(--neon-2));color:#041026;border:none}
 .btn-primary:hover{background:linear-gradient(90deg,var(--neon-2),var(--neon-1))}
-.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--muted)}
+.btn-ghost:hover{border-color:var(--accent);color:#fff}
 .btn-danger{background:rgba(255,40,40,0.12);border:1px solid rgba(255,40,40,0.18);color:#ffb3b3}
 
 /* === Section heads === */
@@ -181,7 +193,7 @@ textarea{background:rgba(20,20,20,0.95);border:1px solid rgba(255,255,255,0.03);
 .search-input::placeholder,.input::placeholder,textarea::placeholder{color:rgba(230,240,255,0.45)}
 .select:hover,.input:hover,.search-input:hover{box-shadow:0 6px 20px rgba(0,230,255,0.06)}
 
-/* === Trending strip (already good) === */
+/* === Trending strip === */
 .trending{margin:40px 0}
 .trending-wrapper{position:relative;max-width:var(--maxwidth);margin:0 auto;overflow:hidden}
 .trending-scroll{display:inline-flex;gap:16px;padding:12px;scroll-behavior:smooth;overflow-x:auto;scrollbar-width:none;position:relative}
@@ -209,5 +221,5 @@ a,p,li,label,input,select,textarea,.muted,.title,.meta,.brand-sub{color:#e6f0ff}
   .main-grid{grid-template-columns:1fr;gap:12px}
   .form-grid{grid-template-columns:1fr}
   .product-detail{grid-template-columns:1fr}
-  .hero h1{font-size:2rem}
+  .hero h1{font-size:2.2rem}
 }
