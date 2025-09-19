@@ -1,5 +1,6 @@
 /* === Variables === */
 :root {
+  --bg-body: #0b0f1a;   /* fixed background for all pages */
   --bg-1: #0b0f1a;
   --bg-2: #071027;
   --neon-1: #00e6ff;
@@ -16,7 +17,7 @@
 html, body { height: 100%; }
 body {
   font-family: "Inter", system-ui, sans-serif;
-  background: var(--bg-1);   /* ✅ Solid uniform background */
+  background: var(--bg-body);   /* solid background */
   color: #e6f0ff;
   min-height: 100vh;
   line-height: 1.6;
@@ -67,7 +68,7 @@ body {
 
 /* === Hero === */
 .hero {
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
   padding: 4rem 2rem;
   border-radius: 18px;
   text-align: center;
@@ -99,7 +100,6 @@ body {
   gap: 16px;
   margin-top: 2rem;
 }
-
 .card.compact {
   padding: 10px;
   border-radius: 12px;
@@ -135,10 +135,8 @@ body {
   color: var(--neon-1);
   margin-bottom: 4px;
 }
-
-/* ✅ View button is always visible, only works on click */
+/* View button stays visible (no hover pop-up) */
 .card.compact .view-btn {
-  display: block;
   margin-top: 6px;
   width: 100%;
   padding: 6px;
@@ -156,10 +154,10 @@ body {
   color: #fff;
 }
 
-/* === Cards (Latest Listings) === */
+/* === Cards (Latest Listings etc.) === */
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
 .card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+  background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 14px;
   padding: 14px;
@@ -179,7 +177,81 @@ body {
 .card .title { font-weight: 700; margin-bottom: 6px; font-size: 1.05rem; }
 .card .price { font-weight: 800; color: var(--neon-1); margin-bottom: 8px; font-size: 1.1rem; }
 .card .meta { font-size: 0.9rem; color: var(--muted); margin-bottom: 12px; }
-.card .actions { margin-top: auto; }
 .card .actions .btn { width: 100%; text-align: center; }
 
-/* ... (rest of your sidebar, forms, footer, responsive same as before) ... */
+/* === Sidebar === */
+.sidebar { position: sticky; top: 100px; }
+.ad-slot {
+  margin-bottom: 18px;
+  background: rgba(255,255,255,0.02);
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+  text-align: center;
+}
+.ad-slot img { width: 100%; border-radius: 10px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.ad-slot img:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0,255,150,0.6); }
+.sidebar-card {
+  padding: 14px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* === Footer === */
+.site-footer {
+  margin-top: 3rem;
+  padding: 2rem;
+  background: rgba(0,0,0,0.3);
+  text-align: center;
+  font-size: 0.9rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.muted { color: var(--muted); }
+
+/* === Modal === */
+.nb-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.nb-modal-content {
+  background: rgba(15, 20, 35, 0.95);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 2rem;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+}
+.nb-modal-content img { width: 100%; border-radius: 10px; margin-bottom: 1rem; }
+.nb-modal-content .close {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  background: var(--neon-1);
+  color: #041026;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+.nb-modal-content .close:hover {
+  background: var(--neon-2);
+  color: #fff;
+}
+
+/* === Responsive === */
+@media(max-width: 980px) {
+  .main-grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 2.2rem; }
+}
+@media(max-width: 600px) {
+  .hero { padding: 2rem 1rem; }
+  .btn { padding: 0.7rem 1.2rem; }
+}
