@@ -14,6 +14,8 @@
   <script src="js/product-data.js"></script>
 </head>
 <body class="dark-bg">
+
+  <!-- Header -->
   <header class="site-header">
     <div class="container header-inner">
       <a href="index.html" class="brand">
@@ -32,6 +34,16 @@
     </div>
   </header>
 
+  <!-- Hero / Banner -->
+  <section class="hero" style="position:relative;z-index:10;">
+    <div class="container hero-inner">
+      <div class="brand-line">Welcome Back</div>
+      <h1>Login to <span class="accent">Nepali Bazar</span></h1>
+      <p class="hero-sub">Access your account to manage your listings and discover the latest deals.</p>
+    </div>
+  </section>
+
+  <!-- Login Form -->
   <main class="container auth-wrap">
     <div class="auth-card">
       <h2>Login</h2>
@@ -47,12 +59,10 @@
         </div>
         <p id="login-msg" class="muted small"></p>
       </form>
-      <div style="margin-top:12px" class="muted small">
-        Demo accounts: <strong>sohaum / sohaum</strong> (admin), <strong>sneha / sneha</strong> (normal user).
-      </div>
     </div>
   </main>
 
+  <!-- Footer -->
   <footer class="site-footer">
     <div class="container footer-inner">
       <div>© <span id="year"></span> <span class="site-name"></span></div>
@@ -60,17 +70,12 @@
     </div>
   </footer>
 
+  <!-- Scripts -->
   <script src="js/app.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function(){
       document.getElementById('year').textContent = new Date().getFullYear();
       document.querySelectorAll('.site-name').forEach(el => el.textContent = window.SITE_NAME || 'NEPALI BAZAR');
-
-      // demo credentials
-      const accounts = {
-        sohaum: 'sohaum', // admin
-        sneha: 'sneha'    // regular user
-      };
 
       const loginForm = document.getElementById('login-form');
       const loginMsg = document.getElementById('login-msg');
@@ -79,12 +84,14 @@
         e.preventDefault();
         const username = this.username.value.trim();
         const password = this.password.value.trim();
-        if(accounts[username] && accounts[username] === password){
+
+        // 🔑 For now, accept any non-empty username/password (remove demo accounts)
+        if(username && password){
           localStorage.setItem('nb_logged_in_user', username);
-          loginMsg.textContent = "✅ Login successful! Redirecting to your profile...";
+          loginMsg.textContent = "✅ Login successful! Redirecting...";
           setTimeout(()=>{ window.location.href = "profile.html"; }, 600);
         } else {
-          loginMsg.textContent = "❌ Invalid username or password!";
+          loginMsg.textContent = "❌ Please enter username and password.";
         }
       });
     });
