@@ -41,7 +41,7 @@
   </header>
 
   <!-- Hero Banner -->
-  <section class="hero">
+  <section id="hero" class="hero">
     <div class="container hero-inner">
       <div class="brand-line">XtraSupermarket</div>
       <h1>Fresher than Ever</h1>
@@ -63,11 +63,17 @@
     </section>
 
     <aside class="sidebar">
-      <div class="ad-slot"><img src="assets/images/ad1.jpg" alt="Ad 1" onerror="this.style.display='none'"/></div>
-      <div class="ad-slot small"><img src="assets/images/ad2.jpg" alt="Ad 2" onerror="this.style.display='none'"/></div>
+      <div class="ad-slot">
+        <img src="assets/images/ad1.jpg" alt="Ad 1" onerror="this.style.display='none'"/>
+      </div>
+      <div class="ad-slot small">
+        <img src="assets/images/ad2.jpg" alt="Ad 2" onerror="this.style.display='none'"/>
+      </div>
       <div class="sidebar-card">
         <h3>Post quickly</h3>
-        <p class="muted">List your item in under a minute. Add photos & contact details so buyers can reach you directly.</p>
+        <p class="muted">
+          List your item in under a minute. Add photos & contact details so buyers can reach you directly.
+        </p>
         <a class="btn btn-primary" href="sell.html">Create Listing</a>
       </div>
     </aside>
@@ -85,18 +91,20 @@
   <script src="js/app.js"></script>
   <script src="js/nb-fixes.js"></script>
   <script>
-    // Footer branding
+    // --- Footer branding ---
     document.getElementById('year').textContent = new Date().getFullYear();
-    document.querySelectorAll('.site-name').forEach(el => el.textContent = window.SITE_NAME || 'NEPALI BAZAR');
+    document.querySelectorAll('.site-name').forEach(el => {
+      el.textContent = window.SITE_NAME || 'NEPALI BAZAR';
+    });
 
-    // User session
+    // --- User session handling ---
     const loggedUser = localStorage.getItem("nb_logged_in_user");
     const loginLink = document.getElementById("login-link");
     const userInfo = document.getElementById("user-info");
     const usernameDisplay = document.getElementById("username-display");
     const logoutBtn = document.getElementById("logout-btn");
 
-    if(loggedUser){
+    if (loggedUser) {
       loginLink.style.display = "none";
       userInfo.style.display = "inline";
       usernameDisplay.textContent = loggedUser;
@@ -111,7 +119,7 @@
       location.reload();
     });
 
-    // Listings
+    // --- Listings ---
     let products = window.NB_PRODUCTS || [];
     const homeGrid = document.getElementById("home-grid");
 
@@ -125,6 +133,7 @@
       products.forEach(product => {
         const card = document.createElement("div");
         card.className = "card";
+
         card.innerHTML = `
           <div class="thumb">
             <img src="${product.images?.[0] || 'assets/images/placeholder.jpg'}" alt="">
@@ -139,20 +148,24 @@
           ${loggedUser === "sohaum" ? `<button class="btn btn-danger delete-btn">Delete</button>` : ""}
         `;
 
-        if(loggedUser === "sohaum") {
-          card.querySelector(".delete-btn").addEventListener("click", () => {
-            if(confirm("Delete this listing?")) {
-              products = products.filter(p => p.id !== product.id);
-              saveProducts();
-              renderHomeListings();
-            }
-          });
+        if (loggedUser === "sohaum") {
+          const delBtn = card.querySelector(".delete-btn");
+          if (delBtn) {
+            delBtn.addEventListener("click", () => {
+              if (confirm("Delete this listing?")) {
+                products = products.filter(p => p.id !== product.id);
+                saveProducts();
+                renderHomeListings();
+              }
+            });
+          }
         }
 
         homeGrid.appendChild(card);
       });
     }
 
+    // Render on page load
     renderHomeListings();
   </script>
 </body>
