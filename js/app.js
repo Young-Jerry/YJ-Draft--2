@@ -249,7 +249,7 @@
           const reader = new FileReader();
           reader.onload = (ev) => {
             // limit ~500 KB per image
-            if (ev.target.result.length < 700000) {
+            if (ev.target.result.length < 2048000) {
               images.push(ev.target.result);
             }
             processed++;
