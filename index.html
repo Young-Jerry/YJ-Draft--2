@@ -19,7 +19,6 @@
       </a>
       <nav class="nav">
         <a href="products.html" class="nav-link">Shop</a>
-        <a href="login.html" class="nav-link">Login</a>
         <a href="sell.html" class="nav-link cta">Post Ad</a>
         <span id="auth-links"></span>
       </nav>
@@ -59,17 +58,17 @@
     </div>
 
     <!-- Sidebar -->
-<aside class="sidebar">
-  <div class="ad-slot">
-    <a href="https://www.google.com" target="_blank">
-      <img src="assets/images/ad1.jpg" alt="Ad 1" class="ad-img">
-    </a>
-  </div>
-  <div class="ad-slot">
-    <a href="https://www.google.com" target="_blank">
-      <img src="assets/images/ad2.jpg" alt="Ad 2" class="ad-img">
-    </a>
-  </div>
+    <aside class="sidebar">
+      <div class="ad-slot">
+        <a href="https://www.google.com" target="_blank">
+          <img src="assets/images/ad1.jpg" alt="Ad 1" class="ad-img">
+        </a>
+      </div>
+      <div class="ad-slot">
+        <a href="https://www.google.com" target="_blank">
+          <img src="assets/images/ad2.jpg" alt="Ad 2" class="ad-img">
+        </a>
+      </div>
       <div class="sidebar-card">
         <h3>Start Selling Now</h3>
         <br>
@@ -95,6 +94,27 @@
     </div>
   </div>
 
+  <!-- Scripts -->
   <script src="app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const authLinks = document.getElementById("auth-links");
+      const user = localStorage.getItem("nb_logged_in_user");
+
+      if (user) {
+        authLinks.innerHTML = `
+          <span>Welcome, <b>${user}</b></span> |
+          <a href="#" id="logout-btn" class="nav-link">Logout</a>
+        `;
+        document.getElementById("logout-btn").addEventListener("click", (e) => {
+          e.preventDefault();
+          localStorage.removeItem("nb_logged_in_user");
+          location.reload();
+        });
+      } else {
+        authLinks.innerHTML = `<a href="login.html" class="nav-link">Login</a>`;
+      }
+    });
+  </script>
 </body>
 </html>
