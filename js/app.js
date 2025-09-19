@@ -404,10 +404,43 @@
 
   // ================= INIT =================
   document.addEventListener("DOMContentLoaded", () => {
-    ensureDefaultUsers();
-    initAuthUI();
-    initFilters();
-    renderPinnedHero();
-    renderAll();
-  });
-})();
+  ensureDefaultUsers();
+
+  // === Inject demo products if none exist ===
+  if (getProductsRaw().length === 0) {
+    addProduct({
+      title: "Apple iPhone 14",
+      description: "Brand new, 128GB, Black.",
+      price: 120000,
+      currency: "Rs.",
+      category: "Electronics",
+      seller: "sohaum",
+      images: ["assets/images/iphone.jpg"]
+    });
+
+    addProduct({
+      title: "Mountain Bike",
+      description: "Perfect for city & trails.",
+      price: 25000,
+      currency: "Rs.",
+      category: "Sports",
+      seller: "sneha",
+      images: ["assets/images/bike.jpg"]
+    });
+
+    addProduct({
+      title: "Guitar",
+      description: "Acoustic, great condition.",
+      price: 8000,
+      currency: "Rs.",
+      category: "Music",
+      seller: "sneha",
+      images: ["assets/images/guitar.jpg"]
+    });
+  }
+
+  initAuthUI();
+  initFilters();
+  renderPinnedHero();
+  renderAll();
+});
