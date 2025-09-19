@@ -31,10 +31,8 @@
         <input id="global-search-sell" placeholder="Search items..." class="search-input" />
         <a href="index.html" class="nav-link">Home</a>
         <a href="products.html" class="nav-link">Products</a>
-        <a href="login.html" id="login-link" class="nav-link">Login</a>
-        <span id="user-info" class="nav-link" style="display:none;">
-          <span id="username-display"></span> | <a href="#" id="logout-btn">Logout</a>
-        </span>
+        <a href="sell.html" class="nav-link cta">Sell</a>
+        <span id="auth-links"></span>
       </nav>
     </div>
   </header>
@@ -125,23 +123,7 @@
         return;
       }
 
-      // Navbar user info
-      const loginLink = document.getElementById("login-link");
-      const userInfo = document.getElementById("user-info");
-      const usernameDisplay = document.getElementById("username-display");
-      const logoutBtn = document.getElementById("logout-btn");
-
-      loginLink.style.display = "none";
-      userInfo.style.display = "inline";
-      usernameDisplay.textContent = loggedUser;
-
-      logoutBtn.addEventListener("click", function(e){
-        e.preventDefault();
-        localStorage.removeItem("nb_logged_in_user");
-        window.location.href = "login.html";
-      });
-
-      // --- Province/City dropdown ---
+      // Province/City dropdown
       const provinces = {
         "Province 1": ["Biratnagar","Dharan","Itahari"],
         "Madhesh": ["Janakpur","Birgunj","Lahan"],
@@ -172,7 +154,7 @@
         });
       });
 
-      // --- Expiry date: limit to today → +7 days ---
+      // Expiry date: today → +7 days
       const expiryInput = document.getElementById("expiryDate");
       const today = new Date();
       const yyyy = today.getFullYear();
