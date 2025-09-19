@@ -25,11 +25,15 @@
       </a>
 
       <nav class="nav">
-        <input id="global-search-sell" placeholder="Search items..." class="search-input" />
         <a href="index.html" class="nav-link">Home</a>
         <a href="products.html" class="nav-link">Products</a>
         <a href="sell.html" class="nav-link cta">Sell</a>
-        <span id="auth-links"></span>
+        <a href="login.html" id="login-link" class="nav-link">Login</a>
+        <span id="user-info" class="nav-link" style="display:none;">
+          Hi, <span id="username-display"></span> |
+          <a href="#" id="logout-btn" class="nav-link">Logout</a> |
+          <a id="profile-link" class="nav-link" href="profile.html">Profile</a>
+        </span>
       </nav>
     </div>
   </header>
@@ -122,7 +126,6 @@
         window.location.href = 'login.html';
         return;
       }
-      // Province/City dropdown handled by app.js
     });
   </script>
 </body>
