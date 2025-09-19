@@ -15,7 +15,7 @@
   <script src="js/config.js"></script>
   <script src="js/product-data.js"></script>
 </head>
-<body class="dark-bg">
+<body>
 
   <!-- Header -->
   <header class="site-header">
@@ -111,7 +111,7 @@
       location.reload();
     });
 
-    // ALL LISTINGS
+    // Listings
     let products = window.NB_PRODUCTS || [];
     const homeGrid = document.getElementById("home-grid");
 
@@ -124,20 +124,22 @@
       homeGrid.innerHTML = "";
       products.forEach(product => {
         const card = document.createElement("div");
-        card.className = "product-card";
+        card.className = "card";
         card.innerHTML = `
-          <img src="${product.images?.[0] || 'assets/images/placeholder.jpg'}" alt="">
-          <h3>${product.title}</h3>
-          <p>Price: Rs. ${product.price}</p>
-          <p>Seller: ${product.seller}</p>
-          <p>Location: ${product.location}</p>
-          <p>${product.description}</p>
-          ${loggedUser === "sohaum" ? `
-            <button class="delete-btn">Delete</button>
-          ` : ""}`;
+          <div class="thumb">
+            <img src="${product.images?.[0] || 'assets/images/placeholder.jpg'}" alt="">
+          </div>
+          <div class="title">${product.title}</div>
+          <div class="price">Rs. ${product.price}</div>
+          <div class="meta">
+            <span>${product.seller}</span>
+            <span>${product.location}</span>
+          </div>
+          <p class="muted small">${product.description}</p>
+          ${loggedUser === "sohaum" ? `<button class="btn btn-danger delete-btn">Delete</button>` : ""}
+        `;
 
         if(loggedUser === "sohaum") {
-          // Delete button
           card.querySelector(".delete-btn").addEventListener("click", () => {
             if(confirm("Delete this listing?")) {
               products = products.filter(p => p.id !== product.id);
