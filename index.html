@@ -69,7 +69,65 @@
       </div>
     </aside>
   </main>
+ <!-- ===== NAV ===== -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="index.html" class="logo">YJ Marketplace</a>
+      <div id="auth-links" class="auth-links"></div>
+    </div>
+  </nav>
 
+  <!-- ===== HERO ===== -->
+  <section class="hero"></section>
+
+  <!-- ===== HOME GRID ===== -->
+  <section class="section">
+    <div class="container">
+      <h2>Latest Listings</h2>
+      <div id="home-grid" class="grid"></div>
+    </div>
+  </section>
+
+  <!-- ===== PRODUCTS PAGE ===== -->
+  <section class="section">
+    <div class="container">
+      <h2>Browse All Products</h2>
+
+      <!-- 🔍 FILTERS -->
+      <div class="filters">
+        <input type="text" id="search-box" placeholder="Search ads..." />
+        <select id="filter-category">
+          <option value="">All Categories</option>
+          <option value="Electronics">Electronics</option>
+          <option value="Clothing">Clothing</option>
+          <option value="Books">Books</option>
+          <option value="Furniture">Furniture</option>
+        </select>
+        <input type="number" id="filter-min" placeholder="Min Price" />
+        <input type="number" id="filter-max" placeholder="Max Price" />
+      </div>
+
+      <div id="products-grid" class="grid"></div>
+    </div>
+  </section>
+
+  <!-- ===== PROFILE PAGE ===== -->
+  <section id="profile-page" class="section">
+    <div class="container">
+      <h2>My Listings</h2>
+      <div id="profile-listings" class="grid"></div>
+    </div>
+  </section>
+
+  <!-- ===== MODAL ===== -->
+  <div id="nb-modal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="this.closest('.modal').style.display='none'">&times;</span>
+      <div id="nb-modal-body"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
   <!-- Footer -->
   <footer class="site-footer">
     <div class="container footer-inner">
