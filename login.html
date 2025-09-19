@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login — Nepali Bazar</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/config.js"></script>
+  <script src="js/product-data.js"></script>
+</head>
+<body class="dark-bg">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand">
+        <div class="logo">NB</div>
+        <div class="brand-text">
+          <div class="brand-title"><span class="site-name"></span></div>
+          <div class="brand-sub">Sign in to post listings</div>
+        </div>
+      </a>
+
+      <nav class="nav">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="products.html" class="nav-link">Products</a>
+        <a href="sell.html" class="nav-link cta">Sell</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container auth-wrap">
+    <div class="auth-card">
+      <h2>Login</h2>
+      <form id="login-form" class="form-grid">
+        <label>Username
+          <input name="username" placeholder="Username" class="input" required />
+        </label>
+        <label>Password
+          <input name="password" type="password" placeholder="Password" class="input" required />
+        </label>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">Sign in</button>
+        </div>
+        <p id="login-msg" class="muted small"></p>
+      </form>
+      <div style="margin-top:12px" class="muted small">
+        Demo accounts: <strong>sohaum / sohaum</strong> (admin), <strong>sneha / sneha</strong> (normal user).
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div>© <span id="year"></span> <span class="site-name"></span></div>
+      <div class="muted">Contact: <a href="mailto:help@nepalibazar.test">help@nepalibazar.test</a></div>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function(){
+      document.getElementById('year').textContent = new Date().getFullYear();
+      document.querySelectorAll('.site-name').forEach(el => el.textContent = window.SITE_NAME || 'NEPALI BAZAR');
+
+      // demo credentials
+      const accounts = {
+        sohaum: 'sohaum', // admin
+        sneha: 'sneha'    // regular user
+      };
+
+      const loginForm = document.getElementById('login-form');
+      const loginMsg = document.getElementById('login-msg');
+
+      loginForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        const username = this.username.value.trim();
+        const password = this.password.value.trim();
+        if(accounts[username] && accounts[username] === password){
+          localStorage.setItem('nb_logged_in_user', username);
+          loginMsg.textContent = "✅ Login successful! Redirecting to your profile...";
+          setTimeout(()=>{ window.location.href = "profile.html"; }, 600);
+        } else {
+          loginMsg.textContent = "❌ Invalid username or password!";
+        }
+      });
+    });
+  </script>
+</body>
+</html>

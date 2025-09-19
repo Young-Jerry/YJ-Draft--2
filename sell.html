@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sell — Nepali Bazar</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <script src="js/config.js"></script>
+  <script src="js/product-data.js"></script>
+</head>
+<body class="dark-bg">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand">
+        <div class="logo">NB</div>
+        <div class="brand-text">
+          <div class="brand-title"><span class="site-name"></span></div>
+          <div class="brand-sub">Post your item — Easy & fast</div>
+        </div>
+      </a>
+
+      <nav class="nav">
+        <input id="global-search-sell" placeholder="Search items..." class="search-input" />
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="products.html" class="nav-link">Products</a>
+        <a href="login.html" id="login-link" class="nav-link">Login</a>
+        <span id="user-info" class="nav-link" style="display:none;">
+          <span id="username-display"></span> | <a href="#" id="logout-btn">Logout</a>
+        </span>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="container sell-wrap">
+    <section class="sell-card">
+      <h2>Create a listing</h2>
+      <p class="muted">No buyers here — only contact details will be shown. Add good photos and a clear contact method.</p>
+
+      <form id="sell-form" class="form-grid">
+        <label>Title
+          <input name="title" required maxlength="100" class="input" placeholder="e.g. Gaming laptop GTX 1660 - Kathmandu"/>
+        </label>
+
+        <label>Category
+          <select name="category" class="select">
+            <option>Electronics</option>
+            <option>Vehicles</option>
+            <option>Books</option>
+            <option>Clothing</option>
+            <option>Furniture</option>
+            <option>Other</option>
+          </select>
+        </label>
+
+        <label>Price (Rs)
+          <input name="price" id="price-input" type="number" required class="input" placeholder="e.g. 85000" />
+        </label>
+
+        <label>Province
+          <select name="province" id="province" class="select" required>
+            <option value="">Select Province</option>
+          </select>
+        </label>
+
+        <label>City
+          <select name="city" id="city" class="select" required>
+            <option value="">Select City</option>
+          </select>
+        </label>
+
+        <label>Contact (Phone or Email)
+          <input name="contact" id="contact-input" required class="input" placeholder="98XXXXXXXX (10 digits) or email@example.com" />
+        </label>
+
+        <label>Description
+          <textarea name="description" rows="6" class="input" placeholder="Describe condition, age, extras..."></textarea>
+        </label>
+
+        <label>Upload photos (up to 6)
+          <input id="image-input" name="images" type="file" accept="image/*" multiple class="input" />
+        </label>
+
+        <label>Expiry Date (max 7 days)
+          <input name="expiryDate" id="expiryDate" type="date" required class="input" />
+        </label>
+
+        <div class="preview-area" id="image-preview"></div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">Publish Listing</button>
+          <button class="btn" type="reset">Reset</button>
+        </div>
+
+        <div id="sell-msg" class="muted small"></div>
+      </form>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div>© <span id="year"></span> <span class="site-name"></span></div>
+      <div class="muted">Contact: <a href="mailto:help@nepalibazar.test">help@nepalibazar.test</a></div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function(){
+      // --- Login check ---
+      const loggedUser = localStorage.getItem("nb_logged_in_user");
+      if(!loggedUser){
+        alert("You must log in to post a listing!");
+        window.location.href = "login.html";
+        return;
+      }
+
+      // Navbar user info
+      const loginLink = document.getElementById("login-link");
+      const userInfo = document.getElementById("user-info");
+      const usernameDisplay = document.getElementById("username-display");
+      const logoutBtn = document.getElementById("logout-btn");
+
+      loginLink.style.display = "none";
+      userInfo.style.display = "inline";
+      usernameDisplay.textContent = loggedUser;
+
+      logoutBtn.addEventListener("click", function(e){
+        e.preventDefault();
+        localStorage.removeItem("nb_logged_in_user");
+        window.location.href = "login.html";
+      });
+
+      // --- Province/City dropdown ---
+      const provinces = {
+        "Province 1": ["Biratnagar","Dharan","Itahari"],
+        "Madhesh": ["Janakpur","Birgunj","Lahan"],
+        "Bagmati": ["Kathmandu","Lalitpur","Bhaktapur","Hetauda"],
+        "Gandaki": ["Pokhara","Gorkha","Baglung"],
+        "Lumbini": ["Butwal","Bhairahawa","Nepalgunj"],
+        "Karnali": ["Surkhet","Jumla","Dailekh"],
+        "Sudurpashchim": ["Dhangadhi","Mahendranagar","Tikapur"]
+      };
+
+      const provinceSelect = document.getElementById("province");
+      const citySelect = document.getElementById("city");
+
+      Object.keys(provinces).forEach(p=>{
+        const opt = document.createElement("option");
+        opt.value = p;
+        opt.textContent = p;
+        provinceSelect.appendChild(opt);
+      });
+
+      provinceSelect.addEventListener("change", function(){
+        citySelect.innerHTML = '<option value="">Select City</option>';
+        (provinces[this.value]||[]).forEach(c=>{
+          const opt = document.createElement("option");
+          opt.value = c;
+          opt.textContent = c;
+          citySelect.appendChild(opt);
+        });
+      });
+
+      // --- Expiry date: limit to today → +7 days ---
+      const expiryInput = document.getElementById("expiryDate");
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth()+1).padStart(2,"0");
+      const dd = String(today.getDate()).padStart(2,"0");
+      const minDate = `${yyyy}-${mm}-${dd}`;
+      const maxDate = new Date(today);
+      maxDate.setDate(today.getDate() + 7);
+      const maxY = maxDate.getFullYear();
+      const maxM = String(maxDate.getMonth()+1).padStart(2,"0");
+      const maxD = String(maxDate.getDate()).padStart(2,"0");
+      expiryInput.min = minDate;
+      expiryInput.max = `${maxY}-${maxM}-${maxD}`;
+
+      // Footer year + site name
+      document.getElementById('year').textContent = new Date().getFullYear();
+      document.querySelectorAll('.site-name').forEach(el => el.textContent = window.SITE_NAME || 'NEPALI BAZAR');
+    });
+  </script>
+  <script src="js/nb-fixes.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Product — Nepali Bazar</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Config + Data -->
+  <script src="js/config.js"></script>
+  <script src="js/product-data.js"></script>
+</head>
+<body class="dark-bg">
+
+  <!-- Minimal header (no navigation) -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand">
+        <div class="logo">NB</div>
+        <div class="brand-text">
+          <div class="brand-title"><span class="site-name"></span></div>
+          <div class="brand-sub">Local Marketplace</div>
+        </div>
+      </a>
+    </div>
+  </header>
+
+  <!-- Product detail -->
+  <main class="container product-detail-wrap" style="padding:2rem 0;">
+    <div id="product-detail" class="product-detail" style="max-width:900px;margin:0 auto;"></div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div>© <span id="year"></span> <span class="site-name"></span>. Made with ❤️ in Nepal.</div>
+      <div class="muted">Contact: <a href="mailto:help@nepalibazar.test">help@nepalibazar.test</a></div>
+    </div>
+  </footer>
+
+  <!-- App -->
+  <script src="js/app.js"></script>
+  <script>
+    // Year + site name
+    document.getElementById('year').textContent = new Date().getFullYear();
+    document.querySelectorAll('.site-name').forEach(el => el.textContent = window.SITE_NAME || 'NEPALI BAZAR');
+
+    // Render single product
+    (function(){
+      const url = new URL(window.location.href);
+      const id = url.searchParams.get('id');
+      if(!id){ document.getElementById('product-detail').innerHTML = '<p class="muted">No product selected.</p>'; return; }
+
+      const products = (typeof window.getProducts === 'function') ? window.getProducts() : (window.NB_PRODUCTS||[]);
+      const product = products.find(p => p.id === id);
+      if(!product){ document.getElementById('product-detail').innerHTML = '<p class="muted">Product not found.</p>'; return; }
+
+      function escapeHtml(s){ return s ? String(s).replace(/[&<>\"']/g, m=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]) : ""; }
+      function numberWithCommas(x){ try{ return Number(x).toLocaleString('en-IN'); }catch(e){ return x; } }
+
+      const img = product.images && product.images[0] ? product.images[0] : 'assets/images/placeholder.jpg';
+      const priceDisplay = (Number(product.price) === 0) ? 'FREE' : (product.currency || 'Rs.') + ' ' + numberWithCommas(product.price);
+
+      const html = `
+        <div style="display:flex;flex-wrap:wrap;gap:2rem;align-items:flex-start;">
+          <div style="flex:1;min-width:260px;">
+            <img src="${escapeHtml(img)}" alt="${escapeHtml(product.title)}" style="width:100%;border-radius:12px;object-fit:cover;" onerror="this.src='assets/images/placeholder.jpg'"/>
+          </div>
+          <div style="flex:1;min-width:260px;">
+            <h1 style="margin-top:0">${escapeHtml(product.title)}</h1>
+            <div style="font-size:1.3rem;font-weight:700;margin:0.5rem 0;">${priceDisplay}</div>
+            <div class="muted">Location: ${escapeHtml(product.location||'')}</div>
+            <div class="muted">Seller: ${escapeHtml(product.seller||'')}</div>
+            <hr style="opacity:0.1;margin:1rem 0;">
+            <p>${escapeHtml(product.description||'No description provided.')}</p>
+            <div style="margin-top:1.5rem;">
+              <a class="btn btn-primary" href="mailto:${encodeURIComponent(product.contact)}?subject=${encodeURIComponent('Interested in '+product.title)}">Contact Seller</a>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('product-detail').innerHTML = html;
+    })();
+  </script>
+</body>
+</html>

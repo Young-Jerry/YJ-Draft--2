@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Nepali Bazar — Home</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Config + product data -->
+  <script src="js/config.js"></script>
+  <script src="js/product-data.js"></script>
+</head>
+<body class="dark-bg">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand">
+        <div class="logo">NB</div>
+        <div class="brand-text">
+          <div class="brand-title"><span class="site-name">NEPALI BAZAR</span></div>
+          <div class="brand-sub">Local Marketplace — Game Mode</div>
+        </div>
+      </a>
+
+      <nav class="nav">
+        <input id="global-search" placeholder="Search items, e.g., bike, phone" class="search-input" />
+        <a href="products.html" class="nav-link">Products</a>
+        <a href="sell.html" class="nav-link cta">Sell</a>
+        <a href="login.html" id="login-link" class="nav-link">Login</a>
+        <span id="user-info" class="nav-link" style="display:none;">
+          <span id="username-display"></span> | <a href="#" id="logout-btn">Logout</a>
+        </span>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-overlay"></div>
+    <div class="container hero-inner">
+      <div class="hero-left">
+        <h1 class="hero-title"><span class="accent site-name">NEPALI BAZAR</span><br>Buy • Sell • Connect — Locally</h1>
+        <p class="hero-sub">A neon-lit marketplace for students, workers & creators. Upload your item, add contact details and photos — buyers contact you directly.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="products.html">Browse Items</a>
+          <a class="btn btn-ghost" href="sell.html">List an Item</a>
+        </div>
+      </div>
+      <div class="hero-right"><!-- Dynamic featured ad injected --></div>
+    </div>
+  </section>
+
+  <!-- Trending Section -->
+  <section class="section trending container">
+    <div class="section-head">
+      <h2>🔥 Trending</h2>
+    </div>
+    <div class="trending-wrapper">
+      <button class="arrow left" id="trending-left">&#8249;</button>
+      <div class="trending-scroll" id="trending-scroll"></div>
+      <button class="arrow right" id="trending-right">&#8250;</button>
+    </div>
+  </section>
+
+  <!-- All Listings -->
+  <main class="container main-grid">
+    <section class="content">
+      <div class="section-head"><h2>All Listings</h2></div>
+      <div id="home-grid" class="card-grid"></div>
+    </section>
+
+    <aside class="sidebar">
+      <div class="ad-slot"><img src="assets/images/ad1.jpg" alt="Ad 1" onerror="this.style.display='none'"/></div>
+      <div class="ad-slot small"><img src="assets/images/ad2.jpg" alt="Ad 2" onerror="this.style.display='none'"/></div>
+      <div class="sidebar-card">
+        <h3>Post quickly</h3>
+        <p class="muted">List your item in under a minute. Add photos & contact details so buyers can reach you directly.</p>
+        <a class="btn btn-primary" href="sell.html">Create Listing</a>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div>© <span id="year"></span> <span class="site-name"></span>. Made with ❤️ in Nepal.</div>
+      <div class="muted">Contact: <a href="mailto:help@nepalibazar.test">help@nepalibazar.test</a></div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/app.js"></script>
+  <script src="js/nb-fixes.js"></script>
+  <script>
+    // Footer branding
+    document.getElementById('year').textContent = new Date().getFullYear();
+    document.querySelectorAll('.site-name').forEach(el => el.textContent = window.SITE_NAME || 'NEPALI BAZAR');
+
+    // User session
+    const loggedUser = localStorage.getItem("nb_logged_in_user");
+    const loginLink = document.getElementById("login-link");
+    const userInfo = document.getElementById("user-info");
+    const usernameDisplay = document.getElementById("username-display");
+    const logoutBtn = document.getElementById("logout-btn");
+
+    if(loggedUser){
+      loginLink.style.display = "none";
+      userInfo.style.display = "inline";
+      usernameDisplay.textContent = loggedUser;
+    } else {
+      loginLink.style.display = "inline";
+      userInfo.style.display = "none";
+    }
+
+    logoutBtn.addEventListener("click", e => {
+      e.preventDefault();
+      localStorage.removeItem("nb_logged_in_user");
+      location.reload();
+    });
+
+    // TRENDING (Pinned Ads)
+    const trendingScroll = document.getElementById("trending-scroll");
+
+    function renderTrending() {
+      const pinnedProducts = (window.NB_PRODUCTS || []).filter(p => p.pinned).slice(0,10);
+      trendingScroll.innerHTML = "";
+      pinnedProducts.forEach(p => {
+        const card = document.createElement("div");
+        card.className = "trending-card";
+        card.innerHTML = `
+          <img src="${p.images?.[0] || 'assets/images/placeholder.jpg'}" alt="${p.title}">
+          <div class="info">
+            <h4>${p.title}</h4>
+            <p>Rs. ${p.price}</p>
+          </div>`;
+        trendingScroll.appendChild(card);
+      });
+    }
+
+    document.getElementById("trending-left").onclick = () => {
+      trendingScroll.scrollBy({ left: -300, behavior: "smooth" });
+    };
+    document.getElementById("trending-right").onclick = () => {
+      trendingScroll.scrollBy({ left: 300, behavior: "smooth" });
+    };
+
+    // ALL LISTINGS
+    let products = window.NB_PRODUCTS || [];
+    const homeGrid = document.getElementById("home-grid");
+
+    function saveProducts() {
+      window.NB_PRODUCTS = products;
+      localStorage.setItem(window.LOCAL_STORAGE_KEY || "nb_products_v1", JSON.stringify(products));
+    }
+
+    function renderHomeListings() {
+      homeGrid.innerHTML = "";
+      products.forEach(product => {
+        const card = document.createElement("div");
+        card.className = "product-card";
+        card.innerHTML = `
+          <img src="${product.images?.[0] || 'assets/images/placeholder.jpg'}" alt="">
+          <h3>${product.title}</h3>
+          <p>Price: Rs. ${product.price}</p>
+          <p>Seller: ${product.seller}</p>
+          <p>Location: ${product.location}</p>
+          <p>${product.description}</p>
+          ${loggedUser === "sohaum" ? `
+            <button class="delete-btn">Delete</button>
+            <button class="pin-btn">${product.pinned ? "📌 Unpin" : "📌 Pin"}</button>
+          ` : ""}`;
+
+        if(loggedUser === "sohaum") {
+          // Delete button
+          card.querySelector(".delete-btn").addEventListener("click", () => {
+            if(confirm("Delete this listing?")) {
+              products = products.filter(p => p.id !== product.id);
+              saveProducts();
+              renderHomeListings();
+              renderTrending();
+            }
+          });
+
+          // Pin button
+          card.querySelector(".pin-btn").addEventListener("click", () => {
+            const pinnedCount = products.filter(p => p.pinned).length;
+            if(!product.pinned && pinnedCount >= 10) {
+              alert("You can only pin up to 10 ads in Trending!");
+              return;
+            }
+            product.pinned = !product.pinned;
+            saveProducts();
+            renderHomeListings();
+            renderTrending();
+          });
+        }
+
+        homeGrid.appendChild(card);
+      });
+    }
+
+    renderHomeListings();
+    renderTrending();
+  </script>
+</body>
+</html>
