@@ -109,6 +109,7 @@ body {
   gap: 16px;
   margin-top: 2rem;
 }
+
 .card.compact {
   padding: 10px;
   border-radius: 12px;
@@ -116,11 +117,14 @@ body {
   border: 1px solid rgba(255,255,255,0.08);
   text-align: left;
   transition: transform 0.25s, box-shadow 0.25s;
+  position: relative;
 }
+
 .card.compact:hover {
   transform: translateY(-4px);
   box-shadow: 0 6px 20px rgba(0,0,0,0.5);
 }
+
 .card.compact .thumb {
   height: 100px;
   border-radius: 8px;
@@ -142,6 +146,31 @@ body {
   font-weight: 700;
   color: var(--neon-1);
   margin-bottom: 4px;
+}
+
+/* View button for pinned ads */
+.card.compact .view-btn {
+  display: none;
+  margin-top: 6px;
+  width: 100%;
+  padding: 6px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--neon-1), var(--neon-2));
+  color: #041026;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  text-align: center;
+  transition: all 0.25s;
+}
+
+.card.compact:hover .view-btn {
+  display: block;
+}
+
+.card.compact .view-btn:hover {
+  background: linear-gradient(90deg, var(--neon-2), var(--neon-1));
+  color: #fff;
 }
 
 /* === Buttons === */
