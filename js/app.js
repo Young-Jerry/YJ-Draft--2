@@ -1,3 +1,4 @@
+
 /* app.js - Full site controller */
 (function(){
   // ---------- CONFIG ----------
@@ -5,13 +6,13 @@
   const USERS_KEY = window.LOCAL_USERS_KEY || 'nb_users_v1';
   const LOGGED_IN_KEY = window.CURRENT_USER_KEY || 'nb_logged_in_user';
   const MAX_EXPIRY_DAYS = 7;
+   const MAX_PRICE = 100000000;
   const PLACEHOLDER_IMG = 'assets/images/placeholder.jpg';
-  const MAX_PRICE = 100000000;
 
   // ---------- DOM helpers ----------
   const el = (s) => document.querySelector(s);
   const els = (s) => Array.from(document.querySelectorAll(s));
-  const isProfilePage = () => /profile\.html$/i.test(window.location.pathname) || !!el('#profile-page');
+  const isProfilePage = () => /profile\.html$/i.test(window.location.pathname);
 
   function escapeHtml(s){ return s ? String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]) : ''; }
   function numberWithCommas(x){ try{ return Number(x).toLocaleString('en-IN'); }catch(e){ return x; } }
@@ -108,19 +109,52 @@
   function renderProductsPage(){ const g=el('#products-grid'); if(!g) return; let list=getProducts().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)); g.innerHTML=''; if(!list.length) return g.innerHTML='<div class="muted">No listings</div>'; list.forEach(p=>g.appendChild(createCard(p))); }
   function renderProfilePage(){ const g=el('#profile-listings'); if(!g) return; const u=getCurrentUser(); if(!u) return location.href='login.html'; let list=getProducts().filter(p=>p.seller===u); g.innerHTML=''; list.forEach(p=>g.appendChild(createCard(p))); }
 
+  // ---------- Auth UI ----------
+  function initAuthUI(){
+    const nav=el('.nav'); if(!nav) return;
+
+    // remove old auth UI
+    els('.auth-ui').forEach(x=>x.remove());
+
+    const u=getCurrentUser();
+    if(u){
+      // Logged in: show username + logout + profile
+      const span=document.createElement('span');
+      span.className='nav-link auth-ui';
+      span.innerHTML=`<strong>${escapeHtml(u)}</strong> | <a href="#" id="logout-btn">Logout</a>`;
+      nav.appendChild(span);
+
+      let profile=el('#profile-link');
+      if(!profile){ 
+        profile=document.createElement('a'); 
+        profile.id='profile-link'; 
+        profile.href='profile.html'; 
+        profile.className='nav-link auth-ui'; 
+        profile.textContent='Profile'; 
+        nav.appendChild(profile);
+      }
+      profile.style.display='inline';
+
+      const logoutBtn=span.querySelector('#logout-btn');
+      logoutBtn.onclick=(e)=>{e.preventDefault(); logoutCurrentUser(); location.href='index.html';};
+    } else {
+      // Logged out: show login
+      const login=document.createElement('a');
+      login.href='login.html';
+      login.className='nav-link auth-ui';
+      login.textContent='Login';
+      nav.appendChild(login);
+    }
+  }
+
   // ---------- Init ----------
   document.addEventListener('DOMContentLoaded', ()=>{
     ensureDefaultUsers(); seedDemoProducts();
     initAuthUI(); initAds(); renderPinnedHero(); renderHomeGrid(); renderProductsPage(); renderProfilePage();
   });
 
-  // ---------- Auth UI ----------
-  function initAuthUI(){
-    const nav=el('.nav'); if(!nav) return;
-    let profile=el('#profile-link'); if(!profile){ profile=document.createElement('a'); profile.id='profile-link'; profile.href='profile.html'; profile.className='nav-link'; profile.textContent='Profile'; nav.appendChild(profile); }
-    const u=getCurrentUser(); if(u){ profile.style.display='inline'; } else { profile.style.display='none'; }
-  }
-
   // expose
-  window.renderHomeGrid=renderHomeGrid; window.renderProductsPage=renderProductsPage; window.renderProfilePage=renderProfilePage;
+  window.renderHomeGrid=renderHomeGrid; 
+  window.renderProductsPage=renderProductsPage; 
+  window.renderProfilePage=renderProfilePage;
 })();
