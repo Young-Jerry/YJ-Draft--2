@@ -192,3 +192,22 @@ body {
   transform: scale(1.05);
   box-shadow: 0 8px 20px rgba(0, 255, 200, 0.5);
 }
+
+/* Products grid */
+.products-page .card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Sidebar ads */
+.ad-slot img {
+  width: 100%;
+  border-radius: 10px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ad-slot img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(0,255,150,0.6);
+}
