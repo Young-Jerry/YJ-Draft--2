@@ -10,7 +10,7 @@
   <!-- Header -->
   <header class="site-header">
     <div class="container header-inner">
-      <a href="#" class="brand">
+      <a href="index.html" class="brand">
         <div class="logo">YJ</div>
         <div>
           <div class="brand-title">Nepali Bazar</div>
@@ -18,26 +18,32 @@
         </div>
       </a>
       <nav class="nav">
-        <a href="#" class="nav-link">Home</a>
-        <a href="#" class="nav-link">Shop</a>
-        <a href="#" class="nav-link">Contact</a>
-        <a href="#" class="nav-link cta">Post Ad</a>
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="products.html" class="nav-link">Shop</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+        <a href="post.html" class="nav-link cta">Post Ad</a>
+        <span id="auth-links"></span>
       </nav>
     </div>
   </header>
 
   <!-- Hero -->
   <section class="hero">
-    <div class="hero-inner">
-      <span class="brand-line">XtraSupermarket</span>
-      <h1>Fresher than Ever</h1>
-      <p class="hero-sub">
-        Buy · Sell · Connect — Locally. Discover fresh groceries, household items, and more.
-      </p>
-      <div class="hero-buttons">
-        <a href="#" class="btn btn-primary">Discover Shop</a>
-        <a href="#" class="btn btn-ghost">Festival Offer 25% OFF</a>
+    <div class="container hero-inner">
+      <div class="hero-left">
+        <h1 class="hero-title">
+          <span class="accent site-name">Nepali Bazar</span><br>
+          Buy • Sell • Connect — Locally
+        </h1>
+        <p class="hero-sub">
+          Discover fresh groceries, electronics, clothing, and more.
+        </p>
+        <div class="hero-buttons">
+          <a href="products.html" class="btn btn-primary">Discover Shop</a>
+          <a href="#" class="btn btn-ghost">Festival Offer 25% OFF</a>
+        </div>
       </div>
+      <div class="hero-right"><!-- JS will inject pinned ad here --></div>
     </div>
   </section>
 
@@ -47,9 +53,9 @@
     <div class="content">
       <div class="section-head">
         <h2>Latest Listings</h2>
-        <a href="#" class="small">View all</a>
+        <a href="products.html" class="small">View all</a>
       </div>
-      <div class="card-grid" id="product-list">
+      <div class="card-grid" id="home-grid">
         <!-- JS injects product cards -->
       </div>
     </div>
@@ -57,10 +63,10 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="ad-slot">
-        <img src="https://via.placeholder.com/300x250?text=Ad+1" alt="Ad 1">
+        <img src="images/ad1.jpg" alt="Ad 1">
       </div>
       <div class="ad-slot">
-        <img src="https://via.placeholder.com/300x250?text=Ad+2" alt="Ad 2">
+        <img src="images/ad2.jpg" alt="Ad 2">
       </div>
       <div class="sidebar-card">
         <h3>Special Offer</h3>
@@ -75,6 +81,14 @@
       <p class="muted">© 2025 Nepali Bazar · All rights reserved.</p>
     </div>
   </footer>
+
+  <!-- Modal placeholder -->
+  <div id="nb-modal" class="nb-modal">
+    <div class="nb-modal-content">
+      <div id="nb-modal-body"></div>
+      <button onclick="document.getElementById('nb-modal').style.display='none'">Close</button>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
