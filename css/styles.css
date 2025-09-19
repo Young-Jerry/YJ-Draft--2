@@ -86,20 +86,20 @@ body::before {
 
 /* === Hero Section === */
 .hero {
-  background: #f9fdfc;
+  background: linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
   padding: 5rem 2rem;
   text-align: center;
   border-radius: 16px;
   margin: 2rem auto;
   max-width: 1100px;
-  position: relative;
-  z-index: 5;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5);
 }
 .hero-inner { max-width: 700px; margin: 0 auto; }
 .hero .brand-line {
   display: inline-block;
-  background: rgba(0, 255, 128, 0.15);
-  color: #00c37a;
+  background: rgba(0, 230, 255, 0.15);
+  color: var(--neon-1);
   font-weight: 700;
   padding: 0.3rem 0.8rem;
   border-radius: 8px;
@@ -107,15 +107,16 @@ body::before {
   margin-bottom: 1rem;
 }
 .hero h1 {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Orbitron', sans-serif;
   font-size: 3rem;
   font-weight: 900;
-  color: #000;
+  color: #fff;
   margin: 0.5rem 0 1rem;
+  text-shadow: 0 0 12px var(--neon-1), 0 0 24px var(--neon-2);
 }
 .hero-sub {
-  font-size: 1rem;
-  color: #444;
+  font-size: 1.05rem;
+  color: var(--muted);
   line-height: 1.6;
   margin-bottom: 2rem;
 }
@@ -126,30 +127,12 @@ body::before {
   font-size: 1rem; padding: 0.8rem 1.6rem; border-radius: 999px;
   text-decoration: none; font-weight: 600; transition: all 0.2s ease;
 }
-.hero-buttons .btn-primary { background:#0c0f1a; color:#fff; }
-.hero-buttons .btn-primary:hover { background:#1e2233; }
-.hero-buttons .btn-ghost { border:1.5px solid #000; color:#000; background:transparent; }
-.hero-buttons .btn-ghost:hover { background:#000; color:#fff; }
+.hero-buttons .btn-primary { background:linear-gradient(90deg,var(--neon-1),var(--neon-2)); color:#041026; }
+.hero-buttons .btn-primary:hover { background:linear-gradient(90deg,var(--neon-2),var(--neon-1)); }
+.hero-buttons .btn-ghost { border:1.5px solid var(--neon-1); color:var(--neon-1); background:transparent; }
+.hero-buttons .btn-ghost:hover { background:var(--neon-1); color:#041026; }
 
-/* === Features Section === */
-.features {
-  padding: 50px 20px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
-  gap: 20px;
-  text-align: center;
-}
-.feature {
-  padding: 20px;
-  border-radius: 12px;
-  background: linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));
-  border:1px solid rgba(255,255,255,0.03);
-}
-.feature .icon { font-size:28px; color:var(--neon-1); margin-bottom:12px; }
-.feature h3 { margin:0 0 6px; font-family:"Orbitron",sans-serif; font-size:1.1rem; }
-.feature p { margin:0; font-size:0.95rem; color:var(--muted); }
-
-/* === Product cards, sidebar, etc (kept same) === */
+/* === Product cards, sidebar, etc === */
 .main-grid { display:grid; grid-template-columns:1fr 320px; gap:20px; padding-bottom:40px; }
 .content { padding-right:8px; }
 .sidebar { position:sticky; top:100px; align-self:start; }
