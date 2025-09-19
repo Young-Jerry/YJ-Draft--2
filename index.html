@@ -1,109 +1,81 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Nepali Bazar — Home</title>
-
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="css/styles.css">
-
-  <!-- Config & product data -->
-  <script src="js/config.js"></script>
-  <script src="js/product-data.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nepali Bazar</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <!-- Header -->
   <header class="site-header">
     <div class="container header-inner">
-      <a href="index.html" class="brand">
-        <div class="logo">NB</div>
-        <div class="brand-text">
-          <div class="brand-title"><span class="site-name">NEPALI BAZAR</span></div>
-          <div class="brand-sub">Local Marketplace — Game Mode</div>
+      <a href="#" class="brand">
+        <div class="logo">YJ</div>
+        <div>
+          <div class="brand-title">Nepali Bazar</div>
+          <div class="brand-sub">Buy · Sell · Connect</div>
         </div>
       </a>
       <nav class="nav">
-        <input id="global-search" placeholder="Search items, e.g., bike, phone" class="search-input" />
-        <a href="products.html" class="nav-link">Products</a>
-        <a href="sell.html" class="nav-link cta">Sell</a>
-        <a href="login.html" id="login-link" class="nav-link">Login</a>
-        <span id="user-info" class="nav-link" style="display:none;">
-          <span id="username-display"></span> | <a href="#" id="logout-btn">Logout</a>
-        </span>
+        <a href="#" class="nav-link">Home</a>
+        <a href="#" class="nav-link">Shop</a>
+        <a href="#" class="nav-link">Contact</a>
+        <a href="#" class="nav-link cta">Post Ad</a>
       </nav>
     </div>
   </header>
 
   <!-- Hero -->
-  <section id="hero" class="hero">
-    <div class="container hero-inner">
-      <div class="brand-line">XtraSupermarket</div>
-      <h1 class="hero-title">
-        <span>Fresher</span><br>
-        <span>than</span><br>
-        <span>Ever</span>
-      </h1>
+  <section class="hero">
+    <div class="hero-inner">
+      <span class="brand-line">XtraSupermarket</span>
+      <h1>Fresher than Ever</h1>
       <p class="hero-sub">
-        A supermarket is a self-service shop offering a wide variety of food, beverages and household products, organized into sections.
+        Buy · Sell · Connect — Locally. Discover fresh groceries, household items, and more.
       </p>
       <div class="hero-buttons">
-        <a href="#" class="btn btn-primary">25% Off Festival</a>
-        <a href="products.html" class="btn btn-ghost">Discover Shop</a>
+        <a href="#" class="btn btn-primary">Discover Shop</a>
+        <a href="#" class="btn btn-ghost">Festival Offer 25% OFF</a>
       </div>
     </div>
   </section>
 
-  <!-- Main -->
+  <!-- Main Grid -->
   <main class="container main-grid">
-    <!-- Left: Listings -->
-    <section class="content">
-      <div class="section-head"><h2>Latest Listings</h2></div>
-      <div id="home-grid" class="card-grid"></div>
-    </section>
+    <!-- Latest Listings -->
+    <div class="content">
+      <div class="section-head">
+        <h2>Latest Listings</h2>
+        <a href="#" class="small">View all</a>
+      </div>
+      <div class="card-grid" id="product-list">
+        <!-- JS injects product cards -->
+      </div>
+    </div>
 
-    <!-- Right: Sidebar -->
+    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="ad-slot">
-        <img src="assets/images/ad1.jpg" alt="Ad 1" onerror="this.style.display='none'" />
+        <img src="https://via.placeholder.com/300x250?text=Ad+1" alt="Ad 1">
       </div>
-      <div class="ad-slot small">
-        <img src="assets/images/ad2.jpg" alt="Ad 2" onerror="this.style.display='none'" />
+      <div class="ad-slot">
+        <img src="https://via.placeholder.com/300x250?text=Ad+2" alt="Ad 2">
       </div>
       <div class="sidebar-card">
-        <h3>Post quickly</h3>
-        <p class="muted">List your item in under a minute. Add photos & contact details so buyers can reach you directly.</p>
-        <a class="btn btn-primary" href="sell.html">Create Listing</a>
+        <h3>Special Offer</h3>
+        <p>Get 15% extra discount on electronics this Dashain.</p>
       </div>
     </aside>
   </main>
 
-  <!-- Modal -->
-  <div id="nb-modal" class="modal">
-    <div class="modal-content">
-      <span class="modal-close" onclick="this.closest('.modal').style.display='none'">&times;</span>
-      <div id="nb-modal-body"></div>
-    </div>
-  </div>
-
   <!-- Footer -->
   <footer class="site-footer">
     <div class="container footer-inner">
-      <div>© <span id="year"></span> <span class="site-name"></span>. Made with ❤️ in Nepal.</div>
-      <div class="muted">Contact: <a href="mailto:help@nepalibazar.test">help@nepalibazar.test</a></div>
+      <p class="muted">© 2025 Nepali Bazar · All rights reserved.</p>
     </div>
   </footer>
 
-  <!-- Scripts -->
-  <script src="js/app.js"></script>
-  <script src="js/nb-fixes.js"></script>
-  <script>
-    // Footer info
-    document.getElementById("year").textContent = new Date().getFullYear();
-    document.querySelectorAll(".site-name").forEach(el => el.textContent = window.SITE_NAME || "NEPALI BAZAR");
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
