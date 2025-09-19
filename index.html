@@ -56,15 +56,18 @@
     </div>
   </section>
 
-  <!-- Trending Section -->
-  <section class="section trending container">
-    <div class="section-head">
-      <h2>🔥 Trending</h2>
-    </div>
-    <div class="trending-wrapper">
-      <button class="arrow left" id="trending-left">&#8249;</button>
-      <div class="trending-scroll" id="trending-scroll"></div>
-      <button class="arrow right" id="trending-right">&#8250;</button>
+  <!-- Head Hero Banner (NEW, replaces trending) -->
+  <section class="head-hero-banner">
+    <div class="container banner-inner">
+      <img src="assets/images/head-1.png" alt="Nepali Bazar Banner" class="banner-image">
+      <div class="banner-text">
+        <h2>Welcome to Nepali Bazar</h2>
+        <p>
+          Nepali Bazar is your local online marketplace — a platform to buy, sell, 
+          and connect directly with the Nepali community. Fast, simple, and 
+          community-driven.
+        </p>
+      </div>
     </div>
   </section>
 
@@ -124,32 +127,6 @@
       location.reload();
     });
 
-    // TRENDING (Pinned Ads)
-    const trendingScroll = document.getElementById("trending-scroll");
-
-    function renderTrending() {
-      const pinnedProducts = (window.NB_PRODUCTS || []).filter(p => p.pinned).slice(0,10);
-      trendingScroll.innerHTML = "";
-      pinnedProducts.forEach(p => {
-        const card = document.createElement("div");
-        card.className = "trending-card";
-        card.innerHTML = `
-          <img src="${p.images?.[0] || 'assets/images/placeholder.jpg'}" alt="${p.title}">
-          <div class="info">
-            <h4>${p.title}</h4>
-            <p>Rs. ${p.price}</p>
-          </div>`;
-        trendingScroll.appendChild(card);
-      });
-    }
-
-    document.getElementById("trending-left").onclick = () => {
-      trendingScroll.scrollBy({ left: -300, behavior: "smooth" });
-    };
-    document.getElementById("trending-right").onclick = () => {
-      trendingScroll.scrollBy({ left: 300, behavior: "smooth" });
-    };
-
     // ALL LISTINGS
     let products = window.NB_PRODUCTS || [];
     const homeGrid = document.getElementById("home-grid");
@@ -183,21 +160,19 @@
               products = products.filter(p => p.id !== product.id);
               saveProducts();
               renderHomeListings();
-              renderTrending();
             }
           });
 
-          // Pin button
+          // Pin button (still kept, but won't show in banner anymore)
           card.querySelector(".pin-btn").addEventListener("click", () => {
             const pinnedCount = products.filter(p => p.pinned).length;
             if(!product.pinned && pinnedCount >= 10) {
-              alert("You can only pin up to 10 ads in Trending!");
+              alert("You can only pin up to 10 ads!");
               return;
             }
             product.pinned = !product.pinned;
             saveProducts();
             renderHomeListings();
-            renderTrending();
           });
         }
 
@@ -206,7 +181,6 @@
     }
 
     renderHomeListings();
-    renderTrending();
   </script>
 </body>
 </html>
