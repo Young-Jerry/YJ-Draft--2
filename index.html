@@ -40,33 +40,49 @@
     </div>
   </header>
 
-  <!-- Hero -->
-  <section class="hero">
-    <div class="hero-overlay"></div>
-    <div class="container hero-inner">
-      <div class="hero-left">
-        <h1 class="hero-title"><span class="accent site-name">NEPALI BAZAR</span><br>Buy • Sell • Connect — Locally</h1>
-        <p class="hero-sub">A neon-lit marketplace for students, workers & creators. Upload your item, add contact details and photos — buyers contact you directly.</p>
-        <div class="hero-cta">
-          <a class="btn btn-primary" href="products.html">Browse Items</a>
-          <a class="btn btn-ghost" href="sell.html">List an Item</a>
+  <!-- Hero Promo Section -->
+  <section class="promo-hero">
+    <div class="container promo-inner">
+      <div class="promo-text">
+        <h1>Welcome to <span class="accent">Nepali Bazar</span></h1>
+        <p class="promo-sub">
+          Your trusted online marketplace to <strong>Buy</strong>, <strong>Sell</strong>, 
+          and <strong>Connect</strong> directly with the Nepali community. 
+          Fast, simple, and community-driven.
+        </p>
+        <div class="promo-cta">
+          <a href="products.html" class="btn btn-primary">Discover Shop</a>
+          <a href="sell.html" class="btn btn-ghost">List a Product</a>
         </div>
       </div>
-      <div class="hero-right"><!-- Dynamic featured ad injected --></div>
+      <div class="promo-image">
+        <img src="assets/images/hero-1.png" alt="Nepali Bazar Banner">
+      </div>
     </div>
   </section>
 
-  <!-- Head Hero Banner (NEW, replaces trending) -->
-  <section class="head-hero-banner">
-    <div class="container banner-inner">
-      <img src="assets/images/hero-1.png" alt="Nepali Bazar Banner" class="banner-image">
-      <div class="banner-text">
-        <h2>Welcome to Nepali Bazar</h2>
-        <p>
-          Nepali Bazar is your local online marketplace — a platform to buy, sell, 
-          and connect directly with the Nepali community. Fast, simple, and 
-          community-driven.
-        </p>
+  <!-- Feature Highlights -->
+  <section class="features">
+    <div class="container features-grid">
+      <div class="feature-card">
+        <img src="assets/icons/shipping.png" alt="Free Shipping">
+        <h4>Free Shipping</h4>
+        <p>On all orders above Rs. 5000</p>
+      </div>
+      <div class="feature-card">
+        <img src="assets/icons/return.png" alt="Easy Returns">
+        <h4>Easy Returns</h4>
+        <p>Return within 3 days hassle-free</p>
+      </div>
+      <div class="feature-card">
+        <img src="assets/icons/payment.png" alt="Secure Payment">
+        <h4>Secure Payment</h4>
+        <p>Your payments 100% safe</p>
+      </div>
+      <div class="feature-card">
+        <img src="assets/icons/support.png" alt="Support">
+        <h4>24/7 Support</h4>
+        <p>We’re here whenever you need us</p>
       </div>
     </div>
   </section>
@@ -150,7 +166,6 @@
           <p>${product.description}</p>
           ${loggedUser === "sohaum" ? `
             <button class="delete-btn">Delete</button>
-            <button class="pin-btn">${product.pinned ? "📌 Unpin" : "📌 Pin"}</button>
           ` : ""}`;
 
         if(loggedUser === "sohaum") {
@@ -161,18 +176,6 @@
               saveProducts();
               renderHomeListings();
             }
-          });
-
-          // Pin button (still kept, but won't show in banner anymore)
-          card.querySelector(".pin-btn").addEventListener("click", () => {
-            const pinnedCount = products.filter(p => p.pinned).length;
-            if(!product.pinned && pinnedCount >= 10) {
-              alert("You can only pin up to 10 ads!");
-              return;
-            }
-            product.pinned = !product.pinned;
-            saveProducts();
-            renderHomeListings();
           });
         }
 
