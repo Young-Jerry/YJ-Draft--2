@@ -8,15 +8,14 @@
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-  <!-- Main CSS -->
+  <!-- Styles -->
   <link rel="stylesheet" href="css/styles.css">
 
-  <!-- Config + product data -->
+  <!-- Config & product data -->
   <script src="js/config.js"></script>
   <script src="js/product-data.js"></script>
 </head>
 <body>
-
   <!-- Header -->
   <header class="site-header">
     <div class="container header-inner">
@@ -27,7 +26,6 @@
           <div class="brand-sub">Local Marketplace — Game Mode</div>
         </div>
       </a>
-
       <nav class="nav">
         <input id="global-search" placeholder="Search items, e.g., bike, phone" class="search-input" />
         <a href="products.html" class="nav-link">Products</a>
@@ -40,7 +38,7 @@
     </div>
   </header>
 
-  <!-- Hero Banner -->
+  <!-- Hero -->
   <section id="hero" class="hero">
     <div class="container hero-inner">
       <div class="brand-line">XtraSupermarket</div>
@@ -55,25 +53,18 @@
     </div>
   </section>
 
-  <!-- All Listings -->
+  <!-- Main -->
   <main class="container main-grid">
     <section class="content">
       <div class="section-head"><h2>All Listings</h2></div>
       <div id="home-grid" class="card-grid"></div>
     </section>
-
     <aside class="sidebar">
-      <div class="ad-slot">
-        <img src="assets/images/ad1.jpg" alt="Ad 1" onerror="this.style.display='none'"/>
-      </div>
-      <div class="ad-slot small">
-        <img src="assets/images/ad2.jpg" alt="Ad 2" onerror="this.style.display='none'"/>
-      </div>
+      <div class="ad-slot"><img src="assets/images/ad1.jpg" alt="Ad 1" onerror="this.style.display='none'" /></div>
+      <div class="ad-slot small"><img src="assets/images/ad2.jpg" alt="Ad 2" onerror="this.style.display='none'" /></div>
       <div class="sidebar-card">
         <h3>Post quickly</h3>
-        <p class="muted">
-          List your item in under a minute. Add photos & contact details so buyers can reach you directly.
-        </p>
+        <p class="muted">List your item in under a minute. Add photos & contact details so buyers can reach you directly.</p>
         <a class="btn btn-primary" href="sell.html">Create Listing</a>
       </div>
     </aside>
@@ -91,82 +82,9 @@
   <script src="js/app.js"></script>
   <script src="js/nb-fixes.js"></script>
   <script>
-    // --- Footer branding ---
-    document.getElementById('year').textContent = new Date().getFullYear();
-    document.querySelectorAll('.site-name').forEach(el => {
-      el.textContent = window.SITE_NAME || 'NEPALI BAZAR';
-    });
-
-    // --- User session handling ---
-    const loggedUser = localStorage.getItem("nb_logged_in_user");
-    const loginLink = document.getElementById("login-link");
-    const userInfo = document.getElementById("user-info");
-    const usernameDisplay = document.getElementById("username-display");
-    const logoutBtn = document.getElementById("logout-btn");
-
-    if (loggedUser) {
-      loginLink.style.display = "none";
-      userInfo.style.display = "inline";
-      usernameDisplay.textContent = loggedUser;
-    } else {
-      loginLink.style.display = "inline";
-      userInfo.style.display = "none";
-    }
-
-    logoutBtn.addEventListener("click", e => {
-      e.preventDefault();
-      localStorage.removeItem("nb_logged_in_user");
-      location.reload();
-    });
-
-    // --- Listings ---
-    let products = window.NB_PRODUCTS || [];
-    const homeGrid = document.getElementById("home-grid");
-
-    function saveProducts() {
-      window.NB_PRODUCTS = products;
-      localStorage.setItem(window.LOCAL_STORAGE_KEY || "nb_products_v1", JSON.stringify(products));
-    }
-
-    function renderHomeListings() {
-      homeGrid.innerHTML = "";
-      products.forEach(product => {
-        const card = document.createElement("div");
-        card.className = "card";
-
-        card.innerHTML = `
-          <div class="thumb">
-            <img src="${product.images?.[0] || 'assets/images/placeholder.jpg'}" alt="">
-          </div>
-          <div class="title">${product.title}</div>
-          <div class="price">Rs. ${product.price}</div>
-          <div class="meta">
-            <span>${product.seller}</span>
-            <span>${product.location}</span>
-          </div>
-          <p class="muted small">${product.description}</p>
-          ${loggedUser === "sohaum" ? `<button class="btn btn-danger delete-btn">Delete</button>` : ""}
-        `;
-
-        if (loggedUser === "sohaum") {
-          const delBtn = card.querySelector(".delete-btn");
-          if (delBtn) {
-            delBtn.addEventListener("click", () => {
-              if (confirm("Delete this listing?")) {
-                products = products.filter(p => p.id !== product.id);
-                saveProducts();
-                renderHomeListings();
-              }
-            });
-          }
-        }
-
-        homeGrid.appendChild(card);
-      });
-    }
-
-    // Render on page load
-    renderHomeListings();
+    // Footer info
+    document.getElementById("year").textContent = new Date().getFullYear();
+    document.querySelectorAll(".site-name").forEach(el => el.textContent = window.SITE_NAME || "NEPALI BAZAR");
   </script>
 </body>
 </html>
