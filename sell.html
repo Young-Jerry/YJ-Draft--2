@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sell — Nepali Bazar</title>
 
   <!-- Fonts -->
@@ -10,9 +10,6 @@
 
   <!-- Main CSS -->
   <link rel="stylesheet" href="css/styles.css">
-
-  <script src="js/config.js"></script>
-  <script src="js/product-data.js"></script>
 </head>
 <body class="dark-bg">
 
@@ -22,7 +19,7 @@
       <a href="index.html" class="brand">
         <div class="logo">NB</div>
         <div class="brand-text">
-          <div class="brand-title"><span class="site-name"></span></div>
+          <div class="brand-title"><span class="site-name">Nepali Bazar</span></div>
           <div class="brand-sub">Post your item — Easy & fast</div>
         </div>
       </a>
@@ -38,18 +35,19 @@
   </header>
 
   <!-- Main -->
-  <main class="container sell-wrap">
+  <main class="container">
     <section class="sell-card">
-      <h2>Create a listing</h2>
-      <p class="muted">No buyers here — only contact details will be shown. Add good photos and a clear contact method.</p>
+      <h2>Create a Listing</h2>
+      <p class="muted">No buyers here — only contact details will be shown. Add clear photos and a valid contact method.</p>
 
-      <form id="sell-form" class="form-grid">
+      <form id="sell-form">
         <label>Title
-          <input name="title" required maxlength="100" class="input" placeholder="e.g. Gaming laptop GTX 1660 - Kathmandu"/>
+          <input name="title" required maxlength="100" class="input" placeholder="e.g. Gaming laptop GTX 1660 - Kathmandu" />
         </label>
 
         <label>Category
-          <select name="category" class="select">
+          <select name="category" class="input">
+            <option value="">Select Category</option>
             <option>Electronics</option>
             <option>Vehicles</option>
             <option>Books</option>
@@ -60,17 +58,17 @@
         </label>
 
         <label>Price (Rs)
-          <input name="price" id="price-input" type="number" required class="input" placeholder="e.g. 85000" />
+          <input name="price" type="number" required class="input" placeholder="e.g. 85000" />
         </label>
 
         <label>Province
-          <select name="province" id="province" class="select" required>
+          <select name="province" id="province" class="input" required>
             <option value="">Select Province</option>
           </select>
         </label>
 
         <label>City
-          <select name="city" id="city" class="select" required>
+          <select name="city" id="city" class="input" required>
             <option value="">Select City</option>
           </select>
         </label>
@@ -80,7 +78,7 @@
         </label>
 
         <label>Description
-          <textarea name="description" rows="6" class="input" placeholder="Describe condition, age, extras..."></textarea>
+          <textarea name="description" rows="5" class="input" placeholder="Describe condition, age, extras..."></textarea>
         </label>
 
         <label>Upload photos (up to 6)
@@ -91,14 +89,12 @@
           <input name="expiryDate" id="expiryDate" type="date" required class="input" />
         </label>
 
-        <div class="preview-area" id="image-preview"></div>
-
-        <div class="form-actions">
-          <button class="btn btn-primary" type="submit">Publish Listing</button>
-          <button class="btn" type="reset">Reset</button>
+        <div class="form-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button type="submit" class="btn btn-primary">Publish Listing</button>
+          <button type="reset" class="btn btn-ghost">Reset</button>
         </div>
 
-        <div id="sell-msg" class="muted small"></div>
+        <p id="sell-msg" class="muted small"></p>
       </form>
     </section>
   </main>
@@ -106,7 +102,7 @@
   <!-- Footer -->
   <footer class="site-footer">
     <div class="container footer-inner">
-      <div>© <span id="year"></span> <span class="site-name"></span></div>
+      <div>© <span id="year"></span> <span class="site-name">Nepali Bazar</span></div>
       <div class="muted">Contact: <a href="mailto:help@nepalibazar.test">help@nepalibazar.test</a></div>
     </div>
   </footer>
@@ -114,66 +110,24 @@
   <!-- Scripts -->
   <script src="js/app.js"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", function(){
-      // --- Login check ---
-      const loggedUser = localStorage.getItem("nb_logged_in_user");
-      if(!loggedUser){
-        alert("You must log in to post a listing!");
-        window.location.href = "login.html";
+    document.addEventListener('DOMContentLoaded', function(){
+      // Set footer year
+      const yr = document.getElementById('year');
+      if(yr) yr.textContent = new Date().getFullYear();
+
+      // Enforce login
+      const user = localStorage.getItem('nb_logged_in_user');
+      if(!user){
+        alert('You must log in to post a listing!');
+        window.location.href = 'login.html';
         return;
       }
 
-      // Province/City dropdown
-      const provinces = {
-        "Province 1": ["Biratnagar","Dharan","Itahari"],
-        "Madhesh": ["Janakpur","Birgunj","Lahan"],
-        "Bagmati": ["Kathmandu","Lalitpur","Bhaktapur","Hetauda"],
-        "Gandaki": ["Pokhara","Gorkha","Baglung"],
-        "Lumbini": ["Butwal","Bhairahawa","Nepalgunj"],
-        "Karnali": ["Surkhet","Jumla","Dailekh"],
-        "Sudurpashchim": ["Dhangadhi","Mahendranagar","Tikapur"]
-      };
+      // The rest (province/city dropdown) is done via app.js initSellForm()
 
-      const provinceSelect = document.getElementById("province");
-      const citySelect = document.getElementById("city");
+      // Header auth-links is handled by app.js
 
-      Object.keys(provinces).forEach(p=>{
-        const opt = document.createElement("option");
-        opt.value = p;
-        opt.textContent = p;
-        provinceSelect.appendChild(opt);
-      });
-
-      provinceSelect.addEventListener("change", function(){
-        citySelect.innerHTML = '<option value="">Select City</option>';
-        (provinces[this.value]||[]).forEach(c=>{
-          const opt = document.createElement("option");
-          opt.value = c;
-          opt.textContent = c;
-          citySelect.appendChild(opt);
-        });
-      });
-
-      // Expiry date: today → +7 days
-      const expiryInput = document.getElementById("expiryDate");
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth()+1).padStart(2,"0");
-      const dd = String(today.getDate()).padStart(2,"0");
-      const minDate = `${yyyy}-${mm}-${dd}`;
-      const maxDate = new Date(today);
-      maxDate.setDate(today.getDate() + 7);
-      const maxY = maxDate.getFullYear();
-      const maxM = String(maxDate.getMonth()+1).padStart(2,"0");
-      const maxD = String(maxDate.getDate()).padStart(2,"0");
-      expiryInput.min = minDate;
-      expiryInput.max = `${maxY}-${maxM}-${maxD}`;
-
-      // Footer year + site name
-      document.getElementById('year').textContent = new Date().getFullYear();
-      document.querySelectorAll('.site-name').forEach(el => el.textContent = window.SITE_NAME || 'NEPALI BAZAR');
     });
   </script>
-  <script src="js/nb-fixes.js"></script>
 </body>
 </html>
