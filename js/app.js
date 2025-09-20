@@ -1,9 +1,9 @@
 /* ==========================================================================
-   app.js – Nepali Bazar (BIG single-file)
+   app.js – Nepali Bazar (FINAL single-file)
    - Purpose: single controller for index.html, sell.html, products.html, profile.html
    - Features: auth, products CRUD, pins (top 5), wishlist, modal/confirm,
                gallery, sell form (images->dataURL), draft save/load, pagination,
-               search, filters, owner actions (edit/delete), export helpers
+               search, filters, owner actions (edit/delete), debug API
    ========================================================================== */
 (function () {
   "use strict";
@@ -18,21 +18,21 @@
   const PLACEHOLDER_IMG = "assets/images/placeholder.jpg";
   const PIN_LIMIT = 5;
   const MAX_IMAGES = 6;
-  const MAX_IMAGE_BYTES = 600 * 1024; // ~600KB per image soft warning
-  const PAGE_SIZE = 12; // pagination size for products page
+  const MAX_IMAGE_BYTES = 600 * 1024; // ~600KB soft warning
+  const PAGE_SIZE = 12;
 
   // ------------------ DOM HELPERS ------------------
   const $ = (sel, p = document) => (p || document).querySelector(sel);
   const $$ = (sel, p = document) => Array.from((p || document).querySelectorAll(sel));
   const byId = (id) => document.getElementById(id);
 
-  // ------------------ UTIL HELPERS ------------------
+  // ------------------ UTILS ------------------
   const uid = (prefix = "p") => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   const escapeHtml = (str = "") =>
     String(str).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
   const numberWithCommas = (x) => (isNaN(x) ? x : Number(x).toLocaleString("en-IN"));
 
-  // ------------------ STORAGE HELPERS ------------------
+  // ------------------ STORAGE ------------------
   function readJSON(key, fallback = null) {
     try {
       const raw = localStorage.getItem(key);
@@ -51,7 +51,7 @@
     }
   }
 
-  // ------------------ USER / AUTH ------------------
+  // ------------------ AUTH / USERS ------------------
   function ensureDefaultUsers() {
     const users = readJSON(USERS_KEY, []);
     if (!users || !users.length) {
@@ -61,22 +61,18 @@
       ]);
     }
   }
-
   function currentUser() {
     const u = localStorage.getItem(LOGGED_IN_KEY);
     return u ? { username: u } : null;
   }
-
   function loginUser(username) {
     localStorage.setItem(LOGGED_IN_KEY, username);
-    initAuthUI(); // refresh header UI
+    initAuthUI();
   }
-
   function logoutUser() {
     localStorage.removeItem(LOGGED_IN_KEY);
     initAuthUI();
   }
-
   function isAdmin() {
     const u = localStorage.getItem(LOGGED_IN_KEY);
     const users = readJSON(USERS_KEY, []);
@@ -91,7 +87,6 @@
     writeJSON(STORAGE_KEY, list || []);
   }
   function getActiveProducts() {
-    // filter by expiry if provided
     const now = new Date();
     return getAllProducts().filter((p) => {
       if (!p || !p.expiryDate) return true;
@@ -103,7 +98,6 @@
       }
     });
   }
-
   function addProduct(product) {
     const list = getAllProducts();
     if (!product.id) product.id = uid("p");
@@ -111,12 +105,10 @@
     list.push(product);
     saveProducts(list);
   }
-
   function updateProduct(id, changes) {
     const list = getAllProducts().map((p) => (p.id === id ? { ...p, ...changes } : p));
     saveProducts(list);
   }
-
   function removeProduct(id) {
     const list = getAllProducts().filter((p) => p.id !== id);
     saveProducts(list);
@@ -135,8 +127,7 @@
   function togglePin(id) {
     const pins = getPins();
     if (pins.includes(id)) {
-      const updated = pins.filter((x) => x !== id);
-      savePins(updated);
+      savePins(pins.filter((x) => x !== id));
     } else {
       if (pins.length >= PIN_LIMIT) {
         Modal.show(`❌ You can only pin up to ${PIN_LIMIT} listings.`);
@@ -145,9 +136,9 @@
       pins.push(id);
       savePins(pins);
     }
-    // re-render widgets that show pinned items
+    // re-render contexts that show pins
     renderHeroPinned();
-    renderProductsPage(currentPage); // refresh product cards
+    renderProductsPage(currentPage);
     renderHomeProducts(itemsToShow);
   }
 
@@ -165,7 +156,7 @@
     saveWishlist(wl);
   }
 
-  // ------------------ MODAL / CONFIRM ------------------
+  // ------------------ MODAL & CONFIRM ------------------
   const Modal = {
     ensure() {
       let el = $("#nb-modal");
@@ -197,13 +188,12 @@
   };
 
   function Confirm(msg, cb) {
-    // if other Confirm exists globally, prefer it
     if (window.Confirm && typeof window.Confirm === "function") {
       try {
         window.Confirm(msg, cb);
         return;
-      } catch (e) {
-        // fallback
+      } catch (err) {
+        console.warn("external Confirm failed", err);
       }
     }
 
@@ -237,7 +227,7 @@
     el.style.display = "flex";
   }
 
-  // ------------------ RENDERING CARDS / HERO / HOME ------------------
+  // ------------------ RENDER HELPERS ------------------
   function buildCard(product, compact = false) {
     const div = document.createElement("div");
     div.className = compact ? "card compact" : "card";
@@ -252,10 +242,10 @@
     const actions = compact
       ? `<div class="actions"><button class="btn view-btn">View</button></div>`
       : `<div class="actions">
-          <button class="btn view-btn">View</button>
-          <button class="btn delete-btn">Delete</button>
-          <button class="btn pin-btn">${isPinned(product.id) ? "Unpin" : "Pin"}</button>
-        </div>`;
+            <button class="btn view-btn">View</button>
+            <button class="btn delete-btn">Delete</button>
+            <button class="btn pin-btn">${isPinned(product.id) ? "Unpin" : "Pin"}</button>
+         </div>`;
 
     div.innerHTML = `
       <div class="thumb"><img src="${img}" alt="${title}"></div>
@@ -265,7 +255,6 @@
       ${actions}
     `;
 
-    // events
     div.querySelector(".view-btn")?.addEventListener("click", () => openProductModal(product.id));
     div.querySelector(".delete-btn")?.addEventListener("click", () => {
       Confirm("Delete this listing?", (ok) => {
@@ -295,7 +284,7 @@
     pinnedProducts.forEach((p) => wrap.appendChild(buildCard(p, true)));
   }
 
-  // ------------------ HOME PAGE RENDER (index.html) ------------------
+  // ------------------ HOME PAGE ------------------
   let itemsToShow = 10;
   function renderHomeProducts(limit = itemsToShow) {
     const products = getActiveProducts().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -307,7 +296,7 @@
 
   // ------------------ PRODUCTS PAGE: filtering + pagination ------------------
   let currentPage = 1;
-  let productsCache = []; // filtered/sorted list to paginate over
+  let productsCache = [];
 
   function filterAndSortProducts(filters = {}) {
     const all = getActiveProducts();
@@ -318,7 +307,6 @@
     const sort = filters.sort || "newest";
 
     let list = all.filter((p) => {
-      // search across title, description, owner, city, province
       const hay = ((p.title || "") + " " + (p.description || "") + " " + (p.owner || "") + " " + (p.city || "") + " " + (p.province || "")).toLowerCase();
       if (q && !hay.includes(q)) return false;
       if (category && (p.category || "").toLowerCase() !== category.toLowerCase()) return false;
@@ -335,34 +323,6 @@
     return list;
   }
 
-  function renderProductsPagePage(page = 1, filters = null) {
-    // called by UI; updates productsCache and renders selected page
-    filters = filters || readProductsPageFiltersFromDOM();
-    productsCache = filterAndSortProducts(filters);
-    const total = productsCache.length;
-    const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-    currentPage = Math.max(1, Math.min(page, pages));
-
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const slice = productsCache.slice(start, start + PAGE_SIZE);
-
-    const grid = $("#products-grid");
-    if (!grid) return;
-    grid.innerHTML = "";
-    slice.forEach((p) => grid.appendChild(buildProductCardForPage(p)));
-
-    renderProductsPagination(pages);
-    toggleEmptyState(total === 0);
-  }
-
-  function toggleEmptyState(show) {
-    const el = $("#empty-state");
-    if (!el) return;
-    if (show) el.classList.remove("hidden");
-    else el.classList.add("hidden");
-  }
-
-  // specific card variant for product page to add wishlist/pin quickly
   function buildProductCardForPage(p) {
     const card = document.createElement("div");
     card.className = "card";
@@ -386,11 +346,11 @@
     card.querySelector(".view-btn")?.addEventListener("click", () => openProductModal(p.id));
     card.querySelector(".pin-btn")?.addEventListener("click", () => {
       togglePin(p.id);
-      renderProductsPagePage(currentPage, readProductsPageFiltersFromDOM());
+      renderProductsPage(currentPage);
     });
     card.querySelector(".wishlist-btn")?.addEventListener("click", () => {
       toggleWishlist(p.id);
-      renderProductsPagePage(currentPage, readProductsPageFiltersFromDOM());
+      renderProductsPage(currentPage);
     });
 
     return card;
@@ -405,12 +365,12 @@
     const prev = document.createElement("button");
     prev.textContent = "Prev";
     prev.disabled = currentPage === 1;
-    prev.addEventListener("click", () => renderProductsPagePage(currentPage - 1, readProductsPageFiltersFromDOM()));
+    prev.addEventListener("click", () => renderProductsPage(currentPage - 1));
 
     const next = document.createElement("button");
     next.textContent = "Next";
     next.disabled = currentPage === totalPages;
-    next.addEventListener("click", () => renderProductsPagePage(currentPage + 1, readProductsPageFiltersFromDOM()));
+    next.addEventListener("click", () => renderProductsPage(currentPage + 1));
 
     const pagesWrap = document.createElement("div");
     pagesWrap.style.display = "flex";
@@ -425,13 +385,20 @@
       const btn = document.createElement("button");
       btn.textContent = i;
       btn.disabled = i === currentPage;
-      btn.addEventListener("click", () => renderProductsPagePage(i, readProductsPageFiltersFromDOM()));
+      btn.addEventListener("click", () => renderProductsPage(i));
       pagesWrap.appendChild(btn);
     }
 
     wrap.appendChild(prev);
     wrap.appendChild(pagesWrap);
     wrap.appendChild(next);
+  }
+
+  function toggleEmptyState(show) {
+    const el = $("#empty-state");
+    if (!el) return;
+    if (show) el.classList.remove("hidden");
+    else el.classList.add("hidden");
   }
 
   function readProductsPageFiltersFromDOM() {
@@ -441,6 +408,23 @@
     const minPrice = ($("#price-min") && $("#price-min").value) || 0;
     const maxPrice = ($("#price-max") && $("#price-max").value) || 0;
     return { q, category, sort, minPrice, maxPrice };
+  }
+
+  function renderProductsPage(page = 1) {
+    const filters = readProductsPageFiltersFromDOM();
+    productsCache = filterAndSortProducts(filters);
+    const total = productsCache.length;
+    const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    currentPage = Math.max(1, Math.min(page, pages));
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const slice = productsCache.slice(start, start + PAGE_SIZE);
+
+    const grid = $("#products-grid");
+    if (!grid) return;
+    grid.innerHTML = "";
+    slice.forEach((p) => grid.appendChild(buildProductCardForPage(p)));
+    renderProductsPagination(pages);
+    toggleEmptyState(total === 0);
   }
 
   // ------------------ PRODUCT MODAL / GALLERY ------------------
@@ -459,7 +443,6 @@
   function fillProductModal(p) {
     const modal = $("#product-modal");
     if (!modal) return;
-    // nodes
     const image = $("#modal-image");
     const title = $("#modal-title");
     const desc = $("#modal-desc");
@@ -483,81 +466,96 @@
     seller.textContent = p.owner || "guest";
     contact.textContent = p.contact || "N/A";
 
-    // gallery
     modalState.images = (p.images && p.images.length) ? p.images : [PLACEHOLDER_IMG];
     modalState.idx = 0;
-    image.src = modalState.images[modalState.idx];
-    // thumbs
-    thumbs.innerHTML = "";
-    modalState.images.forEach((src, i) => {
-      const img = document.createElement("img");
-      img.src = src;
-      img.className = i === modalState.idx ? "active" : "";
-      img.onclick = () => {
-        modalState.idx = i;
-        image.src = modalState.images[modalState.idx];
-        fillProductModal(p); // refresh thumbs active class
+    if (image) image.src = modalState.images[modalState.idx];
+    if (thumbs) {
+      thumbs.innerHTML = "";
+      modalState.images.forEach((src, i) => {
+        const img = document.createElement("img");
+        img.src = src;
+        img.className = i === modalState.idx ? "active" : "";
+        img.onclick = () => {
+          modalState.idx = i;
+          if (image) image.src = modalState.images[modalState.idx];
+          // refresh active classes
+          Array.from(thumbs.children).forEach((c, idx) => c.classList.toggle("active", idx === modalState.idx));
+        };
+        thumbs.appendChild(img);
+      });
+    }
+
+    if (wishlistBtn) {
+      const saved = getWishlist().includes(p.id);
+      wishlistBtn.textContent = saved ? "Saved" : "♡ Save";
+      wishlistBtn.onclick = () => {
+        toggleWishlist(p.id);
+        wishlistBtn.textContent = getWishlist().includes(p.id) ? "Saved" : "♡ Save";
+        renderProductsPage(currentPage);
       };
-      thumbs.appendChild(img);
-    });
+    }
 
-    // wishlist state
-    const saved = getWishlist().includes(p.id);
-    wishlistBtn.textContent = saved ? "Saved" : "♡ Save";
-    wishlistBtn.onclick = () => {
-      toggleWishlist(p.id);
-      wishlistBtn.textContent = getWishlist().includes(p.id) ? "Saved" : "♡ Save";
-      // update product page cards
-      renderProductsPagePage(currentPage, readProductsPageFiltersFromDOM());
-    };
-
-    // contact
-    contactBtn.onclick = () => {
-      if (p.contact && p.contact.includes("@")) {
-        window.location.href = "mailto:" + p.contact;
-      } else {
-        // show phone in prompt as fallback
-        alert("Contact: " + (p.contact || "N/A"));
-      }
-    };
-
-    // share
-    shareBtn.onclick = async () => {
-      const url = window.location.origin + window.location.pathname + "#product-" + p.id;
-      const data = { title: p.title, text: p.description || "", url };
-      if (navigator.share) {
-        try {
-          await navigator.share(data);
-        } catch (err) {
-          console.warn(err);
+    if (contactBtn) {
+      contactBtn.onclick = () => {
+        if (p.contact && p.contact.includes("@")) {
+          window.location.href = "mailto:" + p.contact;
+        } else {
+          alert("Contact: " + (p.contact || "N/A"));
         }
-      } else {
-        try {
-          await navigator.clipboard.writeText(url);
-          alert("Link copied to clipboard.");
-        } catch {
-          prompt("Copy link:", url);
-        }
-      }
-    };
+      };
+    }
 
-    // owner actions
+    if (shareBtn) {
+      shareBtn.onclick = async () => {
+        const url = window.location.origin + window.location.pathname + "#product-" + p.id;
+        const data = { title: p.title, text: p.description || "", url };
+        if (navigator.share) {
+          try {
+            await navigator.share(data);
+          } catch (err) {
+            console.warn(err);
+          }
+        } else {
+          try {
+            await navigator.clipboard.writeText(url);
+            alert("Link copied to clipboard.");
+          } catch {
+            prompt("Copy link:", url);
+          }
+        }
+      };
+    }
+
     const user = currentUser();
-    if (user && user.username === p.owner) {
-      editLink.classList.remove("hidden");
-      editLink.href = "sell.html?id=" + encodeURIComponent(p.id);
-      deleteBtn.classList.remove("hidden");
-      deleteBtn.onclick = () => {
-        Confirm("Delete this listing?", (ok) => {
-          if (!ok) return;
-          removeProduct(p.id);
-          closeModal();
-          renderAllViews();
-        });
-      };
-    } else {
-      editLink.classList.add("hidden");
-      deleteBtn.classList.add("hidden");
+    if (editLink && deleteBtn) {
+      if (user && user.username === p.owner) {
+        editLink.classList.remove("hidden");
+        editLink.href = "sell.html?id=" + encodeURIComponent(p.id);
+        deleteBtn.classList.remove("hidden");
+        deleteBtn.onclick = () => {
+          Confirm("Delete this listing?", (ok) => {
+            if (!ok) return;
+            removeProduct(p.id);
+            closeModal();
+            renderAllViews();
+          });
+        };
+      } else if (isAdmin()) {
+        // admin can also delete
+        editLink.classList.add("hidden");
+        deleteBtn.classList.remove("hidden");
+        deleteBtn.onclick = () => {
+          Confirm("Admin delete this listing?", (ok) => {
+            if (!ok) return;
+            removeProduct(p.id);
+            closeModal();
+            renderAllViews();
+          });
+        };
+      } else {
+        editLink.classList.add("hidden");
+        deleteBtn.classList.add("hidden");
+      }
     }
   }
 
@@ -576,22 +574,23 @@
     modalState = { images: [], idx: 0, productId: null };
   }
 
-  // wire product modal arrows & close
   function bindProductModalControls() {
     const prev = $("#gallery-prev");
     const next = $("#gallery-next");
     const closeBtn = $("#modal-close");
+
     if (prev) prev.addEventListener("click", () => {
       if (!modalState.images.length) return;
       modalState.idx = (modalState.idx - 1 + modalState.images.length) % modalState.images.length;
-      $("#modal-image").src = modalState.images[modalState.idx];
+      $("#modal-image") && ($("#modal-image").src = modalState.images[modalState.idx]);
     });
     if (next) next.addEventListener("click", () => {
       if (!modalState.images.length) return;
       modalState.idx = (modalState.idx + 1) % modalState.images.length;
-      $("#modal-image").src = modalState.images[modalState.idx];
+      $("#modal-image") && ($("#modal-image").src = modalState.images[modalState.idx]);
     });
     if (closeBtn) closeBtn.addEventListener("click", closeModal);
+
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeModal();
       if (e.key === "ArrowLeft") prev && prev.click();
@@ -599,7 +598,7 @@
     });
   }
 
-  // ------------------ SELL FORM (image handling, draft, edit) ------------------
+  // ------------------ SELL FORM ------------------
   function initSellForm() {
     const form = $("#sell-form");
     if (!form) return;
@@ -609,16 +608,15 @@
     const saveDraftBtn = $("#save-draft");
     const expiryInput = $("#expiryDate");
 
-    let imageDataUrls = []; // hold data URLs for selected images
+    let imageDataUrls = [];
     let editingProductId = null;
 
-    // if URL has ?id=... then we are editing
+    // detect edit
     const params = new URLSearchParams(window.location.search);
     if (params.has("id")) {
       const id = params.get("id");
       const p = getAllProducts().find((x) => x.id === id);
       if (p) {
-        // prefill fields
         editingProductId = id;
         if (form.title) form.title.value = p.title || "";
         if (form.category) form.category.value = p.category || "";
@@ -638,9 +636,7 @@
       if (raw) {
         try {
           const d = JSON.parse(raw);
-          Object.keys(d).forEach((k) => {
-            if (form[k]) form[k].value = d[k];
-          });
+          Object.keys(d).forEach((k) => { if (form[k]) form[k].value = d[k]; });
         } catch (e) {
           console.warn("draft load failed", e);
         }
@@ -677,7 +673,6 @@
         if (f.size > MAX_IMAGE_BYTES) {
           console.warn(`Image ${f.name} large (${Math.round(f.size / 1024)}KB) - may hit storage quota.`);
         }
-        // read as data URL
         const data = await new Promise((res, rej) => {
           const reader = new FileReader();
           reader.onload = () => res(reader.result);
@@ -714,7 +709,6 @@
       alert("Draft saved locally.");
     });
 
-    // expiry min/max
     if (expiryInput) {
       const today = new Date();
       const max = new Date();
@@ -734,7 +728,6 @@
       }
       if (!confirm("Are you sure you want to publish this listing?")) return;
 
-      // ensure images loaded if user selected files but data urls not yet created
       if (imageInput && imageInput.files && imageInput.files.length && imageDataUrls.length === 0) {
         try {
           imageDataUrls = await filesToDataUrls(imageInput.files);
@@ -760,15 +753,11 @@
         city: fd.get("city") || "",
       };
 
-      if (editingProductId) {
-        updateProduct(editingProductId, payload);
-      } else {
-        addProduct(payload);
-      }
+      if (editingProductId) updateProduct(editingProductId, payload);
+      else addProduct(payload);
 
       localStorage.removeItem(DRAFT_KEY);
 
-      // success feedback
       Modal.show(`<h2>Listing Published 🎉</h2><p>Your item has been successfully listed. You can view it in your profile or go to shop.</p>
         <div style="margin-top:12px;">
           <a href="products.html" class="btn btn-primary">Go to Shop</a>
@@ -779,19 +768,16 @@
       imageDataUrls = [];
       renderThumbs();
       renderAllViews();
-      // if editing, optionally redirect to profile or product
-      if (editingProductId) {
-        // stay
-      } else {
-        // navigate to products
+
+      if (!editingProductId) {
+        // go to products after creation
         window.location.href = "products.html";
       }
     });
   }
 
-  // ------------------ SEARCH / FILTERS UI ------------------
+  // ------------------ SEARCH & FILTERS BINDING ------------------
   function initSearchAndFilters() {
-    // wire basic search boxes (home search and product page search)
     const homeSearch = $("#home-search");
     const pageSearch = $("#search-box");
     const filterCategory = $("#filter-category");
@@ -800,13 +786,8 @@
     const priceMax = $("#price-max");
 
     const handler = () => {
-      // if on products page, render with filters
-      if ($("#products-grid")) {
-        renderProductsPagePage(1, readProductsPageFiltersFromDOM());
-      } else {
-        // otherwise, update index home grid if present
-        renderHomeProducts(itemsToShow);
-      }
+      if ($("#products-grid")) renderProductsPage(1);
+      else renderHomeProducts(itemsToShow);
     };
 
     [homeSearch, pageSearch, filterCategory, filterSort, priceMin, priceMax].forEach((el) => {
@@ -814,45 +795,6 @@
       el.addEventListener("input", handler);
       el.addEventListener("change", handler);
     });
-  }
-
-  function readProductsPageFiltersFromDOM() {
-    const q = ($("#search-box") && $("#search-box").value) || ($("#home-search") && $("#home-search").value) || "";
-    const category = ($("#filter-category") && $("#filter-category").value) || "";
-    const sort = ($("#filter-sort") && $("#filter-sort").value) || "newest";
-    const minPrice = ($("#price-min") && $("#price-min").value) || 0;
-    const maxPrice = ($("#price-max") && $("#price-max").value) || 0;
-    return { q, category, sort, minPrice, maxPrice };
-  }
-
-  // ------------------ PRODUCTS PAGE SPECIFIC ------------------
-  function renderProductsPage(page = 1) {
-    // wrapper for DOM calling
-    renderProductsPagePage(page, readProductsPageFiltersFromDOM());
-  }
-
-  // alias to renderProductsPagePage (keeps backward compatibility)
-  function renderProductsPagePage(page = 1, filters = null) {
-    // same as earlier function above: keep consistent name
-    filters = filters || readProductsPageFiltersFromDOM();
-    productsCache = filterAndSortProducts(filters = filters);
-    const total = productsCache.length;
-    const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-    currentPage = Math.max(1, Math.min(page, pages));
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const slice = productsCache.slice(start, start + PAGE_SIZE);
-    const grid = $("#products-grid");
-    if (!grid) return;
-    grid.innerHTML = "";
-    slice.forEach((p) => grid.appendChild(buildProductCardForPage(p)));
-    renderProductsPagination(pages);
-    toggleEmptyState(total === 0);
-  }
-
-  // reuse previously defined helper functions in this file
-  // but ensure names are available (some might be defined below)
-  function filterAndSortForPage(filters) {
-    return filterAndSortProducts(filters);
   }
 
   // ------------------ PROFILE PAGE ------------------
@@ -871,21 +813,19 @@
 
   // ------------------ GLOBAL RENDERER ------------------
   function renderAllViews() {
-    // refresh everything relevant: home, products (if present), pinned hero, profile
     renderHeroPinned();
     renderHomeProducts(itemsToShow);
-    if ($("#products-grid")) {
-      renderProductsPagePage(currentPage, readProductsPageFiltersFromDOM());
-    }
+    if ($("#products-grid")) renderProductsPage(currentPage);
     renderProfilePage();
   }
 
-  // ------------------ BINDINGS / INIT UI ------------------
+  // ------------------ AUTH UI (header) ------------------
   function initAuthUI() {
     const user = currentUser();
     const loginLink = $("#login-link");
     const userInfo = $("#user-info");
     const usernameDisplay = $("#username-display");
+
     if (user) {
       if (loginLink) loginLink.style.display = "none";
       if (userInfo) {
@@ -901,19 +841,37 @@
           }
         });
       });
+
+      // enhance header small dropdown if present: show profile & logout under a dropdown
+      // many HTML variants use <span id="user-info">; if you want a dropdown add markup accordingly
     } else {
       if (loginLink) loginLink.style.display = "inline-block";
       if (userInfo) userInfo.style.display = "none";
     }
   }
 
-  // ------------------ SMALL HELPERS USED EARLIER ------------------
-  // keep these referenced names available for functions above:
-  // - filterAndSortProducts, buildProductCardForPage, renderProductsPagination, toggleEmptyState
-  // Implemented above; ensure these names exist in current scope
-  // (they are implemented earlier with similar names).
+  // ------------------ BIND PAGE CONTROLS ------------------
+  function wirePageControls() {
+    initSearchAndFilters();
+    bindProductModalControls();
 
-  // ------------------ UTIL: expose debug helpers ------------------
+    const loadMore = $("#load-more-btn");
+    if (loadMore) {
+      loadMore.addEventListener("click", () => {
+        itemsToShow += 10;
+        renderHomeProducts(itemsToShow);
+      });
+    }
+
+    const pm = $("#product-modal");
+    if (pm) {
+      pm.addEventListener("click", (ev) => {
+        if (ev.target === pm) closeModal();
+      });
+    }
+  }
+
+  // ------------------ DEBUG / PUBLIC API ------------------
   function exposeDebugAPI() {
     window.NB = window.NB || {};
     Object.assign(window.NB, {
@@ -936,76 +894,23 @@
       // renders
       renderAllProducts: renderAllViews,
       renderHomeProducts,
-      renderProductsPage: renderProductsPage,
+      renderProductsPage,
       renderProfilePage,
     });
   }
 
-  // ------------------ WIRE PAGE-SPECIFIC CONTROLS ------------------
-  function wirePageControls() {
-    // wire search / filter controls
-    initSearchAndFilters();
-
-    // wire product modal
-    bindProductModalControls();
-
-    // wire possible load-more on home
-    const loadMore = $("#load-more-btn");
-    if (loadMore) {
-      loadMore.addEventListener("click", () => {
-        itemsToShow += 10;
-        renderHomeProducts(itemsToShow);
-      });
-    }
-
-    // wire product modal close if clicking backdrop (if modal element supports)
-    const pm = $("#product-modal");
-    if (pm) {
-      pm.addEventListener("click", (ev) => {
-        if (ev.target === pm) closeModal();
-      });
-    }
-
-    // wire confirm modal fallback if target elements exist (no-op here; Confirm handles fallback)
-  }
-
-  // ------------------ INITIAL SAMPLE DATA (optional) ------------------
-  // none by default. If you want sample items, uncomment and adjust below.
-  /*
-  function seedSampleProducts() {
-    if ((getAllProducts() || []).length) return;
-    addProduct({ title: "Sample Laptop", description: "Good condition", category: "Electronics", price: 45000, images: [], owner: "sohaum", createdAt: new Date().toISOString(), province:"Bagmati", city:"Kathmandu", expiryDate: null });
-    addProduct({ title: "Second sample", description: "Used bike", category: "Vehicles", price: 90000, images: [], owner: "sneha", createdAt: new Date().toISOString(), province:"Lumbini", city:"Butwal", expiryDate: null });
-  }
-  */
-
-  // ------------------ BOOTSTRAP / INIT ------------------
+  // ------------------ BOOTSTRAP ------------------
   document.addEventListener("DOMContentLoaded", () => {
-    // ensure default users
     ensureDefaultUsers();
-
-    // expose debug API for pages and dev
     exposeDebugAPI();
-
-    // init auth UI (header)
     initAuthUI();
-
-    // init sell form if present
     initSellForm();
-
-    // wire controls and page specific behavior
     wirePageControls();
-
-    // run initial renders
     renderAllViews();
-
-    // product modal elements should exist on products page or global; ensure binding exists
     bindProductModalControls();
-
-    // set footer year if present
     const yr = $("#year");
     if (yr) yr.textContent = new Date().getFullYear();
   });
 
-  // ------------------ END of FILE ------------------
+  // ------------------ END ------------------
 })();
