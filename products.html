@@ -10,6 +10,36 @@
 
   <!-- Styles -->
   <link rel="stylesheet" href="css/styles.css">
+
+  <style>
+    /* Small page-specific styles for product page */
+    .controls { display:flex; gap:10px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+    .controls .input, .controls .select { padding:8px; border-radius:6px; border:1px solid #333; background:#111; color:#fff; }
+    .card-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:16px; margin-top:18px; }
+    .card { background:#111; padding:10px; border-radius:8px; border:1px solid #222; color:#fff; display:flex; flex-direction:column; gap:8px; }
+    .card .thumb img{ width:100%; height:140px; object-fit:cover; border-radius:6px; }
+    .card .title { font-weight:600; font-size:15px; }
+    .card .meta { font-size:12px; color:#aaa; }
+    .card .actions { display:flex; gap:6px; margin-top:auto; }
+    .pagination { display:flex; gap:8px; justify-content:center; margin:20px 0; }
+    .pagination button { padding:8px 12px; border-radius:6px; border:1px solid #333; background:#111; color:#fff; cursor:pointer; }
+    .hidden { display:none !important; }
+    .empty-state { text-align:center; padding:30px 10px; color:#bbb; }
+
+    /* Modal styles: reuse your existing structure but add thumbnails */
+    .modal { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.7); z-index:9999; }
+    .modal.hidden { display:none; }
+    .modal-content { width:92%; max-width:1000px; background:#0f0f0f; border-radius:10px; padding:16px; display:grid; grid-template-columns: 1fr 360px; gap:14px; color:#fff; }
+    .modal-gallery { display:flex; flex-direction:column; gap:8px; align-items:center; }
+    .modal-gallery img { width:100%; max-height:420px; object-fit:contain; border-radius:6px; background:#111; }
+    .thumbs { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; max-height:100px; overflow:auto; }
+    .thumbs img { width:70px; height:70px; object-fit:cover; border-radius:6px; cursor:pointer; border:2px solid transparent; }
+    .thumbs img.active { border-color:#ff0055; }
+    .modal-details { padding:6px 8px; overflow:auto; max-height:520px; }
+    .modal-actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+    .muted { color:#aaa; }
+    .btn-small { padding:6px 10px; font-size:13px; border-radius:6px; }
+  </style>
 </head>
 <body class="dark-bg">
 
@@ -62,6 +92,10 @@
             <option value="price-asc">Price: Low → High</option>
             <option value="price-desc">Price: High → Low</option>
           </select>
+
+          <!-- Price range (enhancement) -->
+          <input id="price-min" class="input" placeholder="Min price" type="number" style="width:110px;">
+          <input id="price-max" class="input" placeholder="Max price" type="number" style="width:110px;">
         </div>
       </div>
 
@@ -70,6 +104,7 @@
       </div>
 
       <div id="products-pagination" class="pagination"></div>
+      <div id="empty-state" class="empty-state hidden">No products found. Try another keyword or filter.</div>
     </section>
 
     <!-- Sidebar -->
@@ -92,27 +127,41 @@
   </main>
 
   <!-- Product View Modal -->
-  <div id="product-modal" class="modal hidden">
-    <div class="modal-content">
-      <button class="modal-close" id="modal-close">&times;</button>
+  <div id="product-modal" class="modal hidden" aria-hidden="true" role="dialog">
+    <div class="modal-content" role="document">
+      <button class="modal-close btn-small" id="modal-close" aria-label="Close">&times;</button>
+
       <div class="modal-gallery">
-        <button class="gallery-prev" id="gallery-prev">&#10094;</button>
-        <img id="modal-image" src="" alt="Product Image">
-        <button class="gallery-next" id="gallery-next">&#10095;</button>
+        <div style="width:100%; display:flex; align-items:center; justify-content:center;">
+          <button class="gallery-prev btn-small" id="gallery-prev" aria-label="Previous">&#10094;</button>
+          <img id="modal-image" src="" alt="Product Image">
+          <button class="gallery-next btn-small" id="gallery-next" aria-label="Next">&#10095;</button>
+        </div>
+        <div class="thumbs" id="modal-thumbs" aria-hidden="false"></div>
       </div>
+
       <div class="modal-details">
         <h3 id="modal-title"></h3>
-        <p id="modal-desc"></p>
+        <p id="modal-desc" class="muted"></p>
         <p><strong>Category:</strong> <span id="modal-category"></span></p>
         <p><strong>Price:</strong> Rs. <span id="modal-price"></span></p>
         <p><strong>Location:</strong> <span id="modal-location"></span></p>
         <p><strong>Seller:</strong> <span id="modal-seller"></span></p>
         <p><strong>Contact:</strong> <span id="modal-contact"></span></p>
+
+        <div class="modal-actions">
+          <button id="contact-seller" class="btn btn-primary btn-small">Contact Seller</button>
+          <button id="toggle-wishlist" class="btn btn-ghost btn-small">♡ Save</button>
+          <button id="share-btn" class="btn btn-ghost btn-small">Share</button>
+          <a id="edit-link" class="btn btn-ghost btn-small hidden" href="#">Edit</a>
+          <button id="delete-btn" class="btn btn-danger btn-small hidden">Delete</button>
+        </div>
+
       </div>
     </div>
   </div>
 
-  <!-- Confirmation Modal -->
+  <!-- Confirmation Modal (fallback if app.js has none) -->
   <div id="confirm-modal" class="modal hidden">
     <div class="modal-content small">
       <p id="confirm-message">Are you sure?</p>
@@ -133,29 +182,441 @@
   <!-- Scripts -->
   <script src="js/app.js"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      // Footer year
-      document.getElementById("year").textContent = new Date().getFullYear();
+    // products page script
+    (function(){
+      const STORAGE_KEY = "nb_products_v1";
+      const PINS_KEY = "nb_pins";
+      const WISHLIST_KEY = "nb_wishlist";
+      const LOGGED_IN_KEY = "nb_logged_in_user";
+      const PLACEHOLDER_IMG = "assets/images/placeholder.jpg";
 
-      // Auth handling
-      const user = localStorage.getItem("nb_logged_in_user");
+      // pagination config
+      const PAGE_SIZE = 12;
+      let currentPage = 1;
+      let productsCache = []; // currently filtered/sorted products
+
+      // DOM
+      const grid = document.getElementById("products-grid");
+      const paginationWrap = document.getElementById("products-pagination");
+      const emptyState = document.getElementById("empty-state");
+      const searchBox = document.getElementById("search-box");
+      const catSel = document.getElementById("filter-category");
+      const sortSel = document.getElementById("filter-sort");
+      const minPrice = document.getElementById("price-min");
+      const maxPrice = document.getElementById("price-max");
+
+      // modal elements
+      const modal = document.getElementById("product-modal");
+      const modalClose = document.getElementById("modal-close");
+      const modalImage = document.getElementById("modal-image");
+      const modalTitle = document.getElementById("modal-title");
+      const modalDesc = document.getElementById("modal-desc");
+      const modalCategory = document.getElementById("modal-category");
+      const modalPrice = document.getElementById("modal-price");
+      const modalLocation = document.getElementById("modal-location");
+      const modalSeller = document.getElementById("modal-seller");
+      const modalContact = document.getElementById("modal-contact");
+      const thumbs = document.getElementById("modal-thumbs");
+      const galleryPrev = document.getElementById("gallery-prev");
+      const galleryNext = document.getElementById("gallery-next");
+      const contactSellerBtn = document.getElementById("contact-seller");
+      const wishlistBtn = document.getElementById("toggle-wishlist");
+      const shareBtn = document.getElementById("share-btn");
+      const editLink = document.getElementById("edit-link");
+      const deleteBtn = document.getElementById("delete-btn");
+
+      // auth UI
       const loginLink = document.getElementById("login-link");
       const userInfo = document.getElementById("user-info");
       const usernameDisplay = document.getElementById("username-display");
+      const logoutBtn = document.getElementById("logout-btn");
 
-      if (user) {
-        loginLink.style.display = "none";
-        userInfo.style.display = "inline-block";
-        usernameDisplay.textContent = user;
-        document.getElementById("logout-btn").addEventListener("click", (e) => {
-          e.preventDefault();
-          // logout will use confirmation modal via app.js
-        });
-      } else {
-        loginLink.style.display = "inline-block";
-        userInfo.style.display = "none";
+      // helpers
+      const readJSON = (k, fb) => {
+        try { const raw = localStorage.getItem(k); return raw ? JSON.parse(raw) : fb; } catch { return fb; }
+      };
+      const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ console.error(e); alert('Storage error'); } };
+      const getProducts = () => readJSON(STORAGE_KEY, []);
+      const getPins = () => readJSON(PINS_KEY, []);
+      const savePins = (arr) => writeJSON(PINS_KEY, arr);
+      const getWishlist = () => readJSON(WISHLIST_KEY, []);
+      const saveWishlist = (a) => writeJSON(WISHLIST_KEY, a);
+      const currentUser = () => localStorage.getItem(LOGGED_IN_KEY);
+
+      // initial auth UI
+      function initAuthUI(){
+        const user = currentUser();
+        if(user){
+          if(loginLink) loginLink.style.display = "none";
+          if(userInfo) userInfo.style.display = "inline-block";
+          if(usernameDisplay) usernameDisplay.textContent = user;
+          if(logoutBtn) logoutBtn.addEventListener("click", (e)=> {
+            e.preventDefault();
+            // delegate to app.js if available
+            if(window.NB && typeof window.NB.logout === 'function'){ window.NB.logout(); }
+            localStorage.removeItem(LOGGED_IN_KEY);
+            location.reload();
+          });
+        } else {
+          if(loginLink) loginLink.style.display = "inline-block";
+          if(userInfo) userInfo.style.display = "none";
+        }
       }
-    });
+
+      // build a product card DOM
+      function buildCard(p){
+        const card = document.createElement("div");
+        card.className = "card";
+        card.dataset.id = p.id;
+        const img = escapeHtml((p.images && p.images[0]) || PLACEHOLDER_IMG);
+
+        const isPinned = getPins().includes(p.id);
+        const wishlist = getWishlist().includes(p.id);
+
+        card.innerHTML = `
+          <div class="thumb"><img src="${img}" alt="${escapeHtml(p.title)}"></div>
+          <div class="title">${escapeHtml(p.title)} ${isPinned ? "📌": ""}</div>
+          <div class="meta muted">by ${escapeHtml(p.owner || "guest")} • ${escapeHtml(p.city || "")}</div>
+          <div class="price">Rs. ${formatPrice(p.price)}</div>
+          <div class="actions">
+            <button class="btn btn-small view-btn">View</button>
+            <button class="btn btn-small pin-btn">${isPinned ? 'Unpin' : 'Pin'}</button>
+            <button class="btn btn-small wishlist-btn">${wishlist ? 'Saved' : '♡ Save'}</button>
+          </div>
+        `;
+
+        // events
+        card.querySelector(".view-btn").addEventListener("click", ()=> openModalForProduct(p));
+        card.querySelector(".pin-btn").addEventListener("click", ()=> {
+          togglePin(p.id);
+          renderPage(currentPage);
+        });
+        card.querySelector(".wishlist-btn").addEventListener("click", (e)=> {
+          toggleWishlist(p.id);
+          renderPage(currentPage);
+        });
+        return card;
+      }
+
+      function formatPrice(v){
+        if(!v && v !== 0) return "FREE";
+        try { return Number(v).toLocaleString("en-IN"); } catch { return v; }
+      }
+
+      function escapeHtml(str=""){
+        return String(str).replace(/[&<>"']/g, (m)=> ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+      }
+
+      // render page (with current filters & pagination)
+      function filterSortProducts(){
+        const all = getProducts();
+        const q = (searchBox.value || "").trim().toLowerCase();
+        const cat = (catSel.value || "").trim();
+        const sort = sortSel.value;
+        const min = parseInt(minPrice.value || "0") || 0;
+        const max = parseInt(maxPrice.value || "0") || 0;
+
+        let list = all.filter(p => {
+          // search across title, description, owner, city, province
+          const hay = ((p.title||"") + " " + (p.description||"") + " " + (p.owner||"") + " " + (p.city||"") + " " + (p.province||"")).toLowerCase();
+          if(q && !hay.includes(q)) return false;
+          if(cat && (p.category||"").toLowerCase() !== cat.toLowerCase()) return false;
+          if(min && (p.price || 0) < min) return false;
+          if(max && max > 0 && (p.price || 0) > max) return false;
+          return true;
+        });
+
+        // sort
+        if(sort === "newest") list.sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt));
+        else if(sort === "oldest") list.sort((a,b)=> new Date(a.createdAt) - new Date(b.createdAt));
+        else if(sort === "price-asc") list.sort((a,b)=> (a.price||0) - (b.price||0));
+        else if(sort === "price-desc") list.sort((a,b)=> (b.price||0) - (a.price||0));
+
+        return list;
+      }
+
+      function renderPage(page=1){
+        productsCache = filterSortProducts();
+        const total = productsCache.length;
+        const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        currentPage = Math.max(1, Math.min(page, pages));
+
+        // show/hide empty state
+        if(total === 0) {
+          grid.innerHTML = "";
+          emptyState.classList.remove("hidden");
+          paginationWrap.innerHTML = "";
+          return;
+        } else {
+          emptyState.classList.add("hidden");
+        }
+
+        const start = (currentPage - 1) * PAGE_SIZE;
+        const slice = productsCache.slice(start, start + PAGE_SIZE);
+
+        grid.innerHTML = "";
+        slice.forEach(p => grid.appendChild(buildCard(p)));
+
+        renderPagination(pages);
+      }
+
+      function renderPagination(totalPages){
+        paginationWrap.innerHTML = "";
+        if(totalPages <= 1) return;
+
+        const prev = document.createElement("button");
+        prev.textContent = "Prev";
+        prev.disabled = currentPage === 1;
+        prev.addEventListener("click", ()=> renderPage(currentPage - 1));
+
+        const next = document.createElement("button");
+        next.textContent = "Next";
+        next.disabled = currentPage === totalPages;
+        next.addEventListener("click", ()=> renderPage(currentPage + 1));
+
+        // page numbers (show up to 5 centered)
+        const pagesWrap = document.createElement("div");
+        pagesWrap.style.display = "flex";
+        pagesWrap.style.gap = "6px";
+        const maxButtons = 5;
+        let start = Math.max(1, currentPage - Math.floor(maxButtons/2));
+        let end = Math.min(totalPages, start + maxButtons - 1);
+        if(end - start + 1 < maxButtons) start = Math.max(1, end - maxButtons + 1);
+
+        for(let i=start;i<=end;i++){
+          const btn = document.createElement("button");
+          btn.textContent = i;
+          btn.disabled = i === currentPage;
+          btn.addEventListener("click", ()=> renderPage(i));
+          pagesWrap.appendChild(btn);
+        }
+
+        paginationWrap.appendChild(prev);
+        paginationWrap.appendChild(pagesWrap);
+        paginationWrap.appendChild(next);
+      }
+
+      // pin/unpin
+      function togglePin(id){
+        // try using window.NB if provided
+        if(window.NB && typeof window.NB.togglePin === "function"){
+          window.NB.togglePin(id);
+          return;
+        }
+        let pins = getPins();
+        if(pins.includes(id)) pins = pins.filter(x=>x!==id);
+        else {
+          if(pins.length >= 5){ alert("You can pin up to 5 listings."); return; }
+          pins.push(id);
+        }
+        savePins(pins);
+      }
+
+      // wishlist toggle
+      function toggleWishlist(id){
+        let wl = getWishlist();
+        if(wl.includes(id)) wl = wl.filter(x=>x!==id);
+        else wl.push(id);
+        saveWishlist(wl);
+      }
+
+      // Open modal for product
+      let modalImages = [];
+      let modalIndex = 0;
+      let currentModalProduct = null;
+      function openModalForProduct(p){
+        currentModalProduct = p;
+        modalImages = (p.images && p.images.length) ? p.images : [PLACEHOLDER_IMG];
+        modalIndex = 0;
+        setModalContent(p);
+        showModal();
+      }
+
+      function setModalContent(p){
+        modalTitle.textContent = p.title || "Untitled";
+        modalDesc.textContent = p.description || "";
+        modalCategory.textContent = p.category || p.subcategory || "";
+        modalPrice.textContent = p.price ? formatPrice(p.price) : "FREE";
+        modalLocation.textContent = [p.city||"", p.province||""].filter(Boolean).join(", ") || "N/A";
+        modalSeller.textContent = p.owner || "guest";
+        modalContact.textContent = p.contact || "N/A";
+
+        // images
+        renderModalImages();
+
+        // wishlist button
+        const saved = getWishlist().includes(p.id);
+        wishlistBtn.textContent = saved ? "Saved" : "♡ Save";
+
+        // contact seller action
+        contactSellerBtn.onclick = () => {
+          if(p.contact && p.contact.includes("@")){
+            window.location.href = "mailto:" + p.contact;
+          } else {
+            // fallback: show phone in an alert (or could integrate SMS/WhatsApp later)
+            alert("Contact: " + (p.contact || "N/A"));
+          }
+        };
+
+        // share
+        shareBtn.onclick = async () => {
+          const shareData = {
+            title: p.title,
+            text: p.description || "",
+            url: window.location.origin + window.location.pathname + "#product-" + p.id
+          };
+          if(navigator.share){
+            try { await navigator.share(shareData); } catch(e){ console.warn(e); }
+          } else {
+            // fallback copy link
+            try {
+              await navigator.clipboard.writeText(shareData.url);
+              alert("Link copied to clipboard.");
+            } catch {
+              prompt("Copy this link:", shareData.url);
+            }
+          }
+        };
+
+        // owner actions: Edit & Delete
+        const user = currentUser();
+        if(user && user === p.owner){
+          editLink.classList.remove("hidden");
+          deleteBtn.classList.remove("hidden");
+          editLink.href = "sell.html?id=" + encodeURIComponent(p.id);
+          deleteBtn.onclick = ()=> {
+            // show confirmation
+            showConfirm("Delete this listing?", async (ok)=>{
+              if(!ok) return;
+              // use NB.deleteProduct if available
+              if(window.NB && typeof window.NB.deleteProduct === "function"){
+                window.NB.deleteProduct(p.id);
+              } else {
+                // local fallback
+                const all = getProducts().filter(x=>x.id !== p.id);
+                writeJSON(STORAGE_KEY, all);
+              }
+              closeModal();
+              renderPage(currentPage);
+            });
+          };
+        } else {
+          editLink.classList.add("hidden");
+          deleteBtn.classList.add("hidden");
+        }
+      }
+
+      function renderModalImages(){
+        modalImage.src = modalImages[modalIndex];
+        thumbs.innerHTML = "";
+        modalImages.forEach((src, i) => {
+          const img = document.createElement("img");
+          img.src = src;
+          img.className = i === modalIndex ? "active" : "";
+          img.onclick = ()=> {
+            modalIndex = i;
+            modalImage.src = modalImages[modalIndex];
+            renderModalImages();
+          };
+          thumbs.appendChild(img);
+        });
+      }
+
+      function showModal(){
+        modal.classList.remove("hidden");
+        modal.setAttribute("aria-hidden","false");
+      }
+      function closeModal(){
+        modal.classList.add("hidden");
+        modal.setAttribute("aria-hidden","true");
+        currentModalProduct = null;
+      }
+
+      galleryPrev.addEventListener("click", ()=>{
+        if(!modalImages.length) return;
+        modalIndex = (modalIndex - 1 + modalImages.length) % modalImages.length;
+        renderModalImages();
+      });
+      galleryNext.addEventListener("click", ()=>{
+        if(!modalImages.length) return;
+        modalIndex = (modalIndex + 1) % modalImages.length;
+        renderModalImages();
+      });
+      modalClose.addEventListener("click", closeModal);
+      window.addEventListener("keydown", (e)=> {
+        if(e.key === "Escape") closeModal();
+        if(e.key === "ArrowLeft") galleryPrev.click();
+        if(e.key === "ArrowRight") galleryNext.click();
+      });
+
+      // small confirm modal fallback (if app.js Confirm not present)
+      function showConfirm(msg, cb){
+        if(window.Confirm && typeof window.Confirm === "function"){
+          window.Confirm(msg, cb);
+          return;
+        }
+        // fallback to built-in confirm
+        const ok = confirm(msg);
+        cb(!!ok);
+      }
+
+      // pin/unpin helper (already used by cards)
+      function togglePinLocal(id){
+        let pins = getPins();
+        if(pins.includes(id)) pins = pins.filter(x=>x!==id);
+        else {
+          if(pins.length >= 5){ alert("You can pin up to 5 listings."); return; }
+          pins.push(id);
+        }
+        savePins(pins);
+      }
+
+      // wire some functions to window.NB if they exist in app.js (prefer app.js)
+      function useAppHelpers(){
+        if(window.NB){
+          // prefer NB.togglePin if exists
+          if(typeof window.NB.togglePin === "function") window.togglePin = window.NB.togglePin;
+          else window.togglePin = togglePinLocal;
+          if(typeof window.NB.deleteProduct === "function") window.deleteProduct = window.NB.deleteProduct;
+          else window.deleteProduct = (id)=> {
+            const arr = getProducts().filter(x=>x.id !== id);
+            writeJSON(STORAGE_KEY, arr);
+          };
+        } else {
+          window.togglePin = togglePinLocal;
+        }
+      }
+
+      // wire UI events for filters/search
+      function setupControls(){
+        [searchBox, catSel, sortSel, minPrice, maxPrice].forEach(el=>{
+          if(!el) return;
+          el.addEventListener("input", ()=> { currentPage = 1; renderPage(1); });
+          el.addEventListener("change", ()=> { currentPage = 1; renderPage(1); });
+        });
+      }
+
+      // initial load
+      function init(){
+        initAuthUI();
+        useAppHelpers();
+        setupControls();
+        renderPage(1);
+
+        // set dynamic year
+        const yr = document.getElementById("year");
+        if(yr) yr.textContent = new Date().getFullYear();
+      }
+
+      // expose small API for debugging
+      window._productsPage = {
+        renderPage, filterSortProducts, getProducts, getPins, getWishlist
+      };
+
+      // run
+      init();
+
+    })();
   </script>
 </body>
 </html>
