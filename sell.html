@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="css/styles.css">
 
   <style>
-    /* Extra sell page styles */
+    /* Layout */
     .sell-layout {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -29,41 +29,46 @@
       font-family: 'Orbitron', sans-serif;
       margin-bottom: 1rem;
     }
+
+    /* Preview card */
     .preview-card {
       border: 1px solid #333;
       border-radius: 8px;
-      padding: 15px;
+      padding: 20px;
+      min-height: 100%;
       background: #1a1a1a;
       color: #fff;
       box-shadow: 0 0 10px rgba(0,255,200,0.1);
     }
+    .preview-card p {
+      margin: 0.4rem 0;
+    }
+
     .preview-images {
       display: flex;
       gap: 10px;
-      margin-top: 10px;
+      margin-top: 12px;
       flex-wrap: wrap;
     }
     .preview-images img {
-      width: 80px;
-      height: 80px;
+      width: 90px;
+      height: 90px;
       object-fit: cover;
       border-radius: 6px;
       border: 2px solid var(--primary);
     }
-    .remove-thumb {
-      position: absolute;
-      top: -6px;
-      right: -6px;
-      background: #ff3333;
+
+    /* Dropdown dark theme */
+    select.input-glow, option {
+      background: #1a1a1a;
       color: #fff;
-      border: none;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      font-size: 12px;
-      cursor: pointer;
-      box-shadow: 0 0 6px rgba(0,0,0,0.6);
     }
+    select.input-glow option:hover {
+      background: #00ffcc;
+      color: #000;
+    }
+
+    /* Modal */
     .nb-modal .nb-modal-content {
       background: #111;
       border-radius: 12px;
@@ -133,7 +138,22 @@
             <option>Other</option>
           </select>
 
-          <label>Images</label>
+          <label>Province</label>
+          <select id="sell-province" class="input-glow" required>
+            <option value="">-- Select Province --</option>
+            <option value="1">Province 1</option>
+            <option value="2">Madhesh Province</option>
+            <option value="3">Bagmati Province</option>
+            <option value="4">Gandaki Province</option>
+            <option value="5">Lumbini Province</option>
+            <option value="6">Karnali Province</option>
+            <option value="7">Sudurpashchim Province</option>
+          </select>
+
+          <label>City</label>
+          <select id="sell-city" class="input-glow" required></select>
+
+          <label>Images (max 3)</label>
           <input type="file" id="sell-images" accept="image/*" multiple class="input-glow" />
 
           <button type="submit" class="btn btn-primary neon-btn" style="margin-top:1rem;">Publish Listing</button>
@@ -145,6 +165,8 @@
         <h2>Live Preview</h2>
         <div class="preview-card">
           <h3 id="preview-title">Your Title</h3>
+          <p id="preview-by" class="muted">By: You</p>
+          <p id="preview-address">Address: -</p>
           <p id="preview-price" class="muted">NPR 0</p>
           <p id="preview-desc">Your description will appear here.</p>
           <div class="preview-images" id="preview-images"></div>
@@ -188,6 +210,7 @@
         loginLink.style.display = "none";
         userDropdown.style.display = "inline-block";
         document.getElementById("username-display").textContent = user;
+        document.getElementById("preview-by").textContent = "By: " + user;
         document.getElementById("logout-btn").addEventListener("click", e => {
           e.preventDefault();
           if(confirm("Logout?")){
@@ -196,6 +219,32 @@
           }
         });
       }
+
+      // Nepal cities by province
+      const cities = {
+        1: ["Biratnagar","Dharan","Itahari","Birtamode","Damak"],
+        2: ["Janakpur","Birgunj","Kalaiya","Jaleshwar"],
+        3: ["Kathmandu","Lalitpur","Bhaktapur","Hetauda","Banepa"],
+        4: ["Pokhara","Gorkha","Baglung","Waling"],
+        5: ["Butwal","Bhairahawa","Nepalgunj","Tansen"],
+        6: ["Surkhet","Jumla","Dailekh"],
+        7: ["Dhangadhi","Mahendranagar","Tikapur"]
+      };
+
+      const provinceSel = document.getElementById("sell-province");
+      const citySel = document.getElementById("sell-city");
+
+      provinceSel.addEventListener("change", () => {
+        citySel.innerHTML = "<option value=''>-- Select City --</option>";
+        if(cities[provinceSel.value]){
+          cities[provinceSel.value].forEach(c => {
+            let opt = document.createElement("option");
+            opt.value = c;
+            opt.textContent = c;
+            citySel.appendChild(opt);
+          });
+        }
+      });
 
       // live preview
       const titleInput = document.getElementById("sell-title");
@@ -210,12 +259,27 @@
         document.getElementById("preview-desc").textContent = descInput.value || "Your description will appear here.";
       });
       priceInput.addEventListener("input", () => {
-        document.getElementById("preview-price").textContent = priceInput.value ? "NPR " + priceInput.value : "NPR 0";
+        let val = priceInput.value;
+        if(val){
+          document.getElementById("preview-price").textContent = "NPR " + Number(val).toLocaleString();
+        } else {
+          document.getElementById("preview-price").textContent = "NPR 0";
+        }
       });
+      provinceSel.addEventListener("change", () => {
+        document.getElementById("preview-address").textContent = "Address: " + (provinceSel.options[provinceSel.selectedIndex].text || "-");
+      });
+      citySel.addEventListener("change", () => {
+        const prov = provinceSel.options[provinceSel.selectedIndex].text || "";
+        const city = citySel.value || "";
+        document.getElementById("preview-address").textContent = "Address: " + city + (prov ? ", " + prov : "");
+      });
+
       imgInput.addEventListener("change", () => {
         const previewImages = document.getElementById("preview-images");
         previewImages.innerHTML = "";
-        [...imgInput.files].forEach(file => {
+        const files = [...imgInput.files].slice(0,3); // max 3
+        files.forEach(file => {
           const reader = new FileReader();
           reader.onload = e => {
             const img = document.createElement("img");
@@ -224,6 +288,9 @@
           };
           reader.readAsDataURL(file);
         });
+        if(imgInput.files.length > 3){
+          alert("Maximum 3 images allowed.");
+        }
       });
 
       // form submit
