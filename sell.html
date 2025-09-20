@@ -10,6 +10,55 @@
 
   <!-- Main CSS -->
   <link rel="stylesheet" href="css/styles.css">
+
+  <style>
+    /* Extra styles for preview & thumbnails */
+    .preview-panel {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #333;
+      border-radius: 10px;
+      background: #111;
+    }
+    .preview-card {
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 10px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    .preview-images {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .preview-images img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #333;
+      position: relative;
+    }
+    .thumb-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+    .remove-thumb {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: #ff3333;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body class="dark-bg">
 
@@ -50,7 +99,7 @@
         </label>
 
         <label>Category
-          <select name="category" class="input" required>
+          <select name="category" id="category" class="input" required>
             <option value="">Select Category</option>
             <option>Electronics</option>
             <option>Vehicles</option>
@@ -61,8 +110,14 @@
           </select>
         </label>
 
+        <label>Subcategory
+          <select name="subcategory" id="subcategory" class="input" required>
+            <option value="">Select Subcategory</option>
+          </select>
+        </label>
+
         <label>Price (Rs)
-          <input name="price" type="number" required min="0" class="input" placeholder="e.g. 85000" />
+          <input name="price" id="price-input" type="number" required min="0" class="input" placeholder="e.g. 85000" />
         </label>
 
         <label>Province
@@ -88,18 +143,34 @@
         <label>Upload photos (up to 6)
           <input id="image-input" name="images" type="file" accept="image/*" multiple class="input" />
         </label>
+        <div class="preview-images" id="thumb-preview"></div>
 
-        <label>Expiry Date (max 7 days)
+        <label>Expiry Date
           <input name="expiryDate" id="expiryDate" type="date" required class="input" />
         </label>
 
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">Publish Listing</button>
           <button type="reset" class="btn btn-ghost">Reset</button>
+          <button type="button" id="save-draft" class="btn btn-ghost">Save Draft</button>
         </div>
 
         <p id="sell-msg" class="muted small"></p>
       </form>
+
+      <!-- Live Preview -->
+      <div class="preview-panel">
+        <h3>Live Preview</h3>
+        <div id="listing-preview" class="preview-card">
+          <strong>Title:</strong> <span id="preview-title">—</span><br>
+          <strong>Category:</strong> <span id="preview-category">—</span> <span id="preview-subcategory"></span><br>
+          <strong>Price:</strong> <span id="preview-price">—</span><br>
+          <strong>Location:</strong> <span id="preview-location">—</span><br>
+          <strong>Description:</strong>
+          <p id="preview-description">—</p>
+          <div id="preview-images" class="preview-images"></div>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -108,7 +179,11 @@
     <div class="nb-modal-content">
       <h2>Listing Published 🎉</h2>
       <p>Your item has been successfully listed on Nepali Bazar. It will expire in 7 days.</p>
-      <button class="close">Close</button>
+      <div style="margin-top:15px;">
+        <a href="products.html" class="btn btn-primary">Go to Shop</a>
+        <a href="profile.html" class="btn btn-ghost">View My Listings</a>
+        <button class="btn close">Close</button>
+      </div>
     </div>
   </div>
 
@@ -126,7 +201,10 @@
     document.addEventListener('DOMContentLoaded', function(){
       document.getElementById('year').textContent = new Date().getFullYear();
 
-      // Restrict to logged-in users
+      const sellForm = document.getElementById("sell-form");
+      const draftKey = "nb_sell_draft";
+
+      // Auth restriction
       const user = localStorage.getItem('nb_logged_in_user');
       if(!user){
         alert('You must log in to post a listing!');
@@ -158,6 +236,27 @@
           opt.value = c; opt.textContent = c;
           citySel.appendChild(opt);
         });
+        updatePreview();
+      });
+
+      // Subcategories
+      const subcats = {
+        "Electronics": ["Laptop","Mobile","Camera","TV","Other"],
+        "Vehicles": ["Car","Bike","Scooter","Truck"],
+        "Books": ["Novel","Textbook","Comics","Other"],
+        "Clothing": ["Men","Women","Kids","Other"],
+        "Furniture": ["Bed","Table","Chair","Other"]
+      };
+      const categorySel = document.getElementById("category");
+      const subcategorySel = document.getElementById("subcategory");
+      categorySel.addEventListener("change", ()=>{
+        subcategorySel.innerHTML = '<option value="">Select Subcategory</option>';
+        (subcats[categorySel.value] || []).forEach(s=>{
+          const opt = document.createElement("option");
+          opt.value = s; opt.textContent = s;
+          subcategorySel.appendChild(opt);
+        });
+        updatePreview();
       });
 
       // Contact validation
@@ -169,30 +268,96 @@
         contactInput.setCustomValidity(phone.test(v) || email.test(v) ? "" : "Enter valid phone or email");
       });
 
-      // Expiry date: max 7 days
+      // Expiry defaults
       const expiry = document.getElementById('expiryDate');
       const today = new Date();
       const max = new Date();
       max.setDate(today.getDate() + 7);
       expiry.min = today.toISOString().split("T")[0];
       expiry.max = max.toISOString().split("T")[0];
+      expiry.value = expiry.max; // default 7 days
 
-      // Image limit
-      document.getElementById('image-input').addEventListener('change', e => {
+      // Price formatting in preview
+      const priceInput = document.getElementById("price-input");
+      priceInput.addEventListener("input", ()=>{
+        updatePreview();
+      });
+
+      // Image upload with thumbnails
+      const imageInput = document.getElementById("image-input");
+      const thumbPreview = document.getElementById("thumb-preview");
+      let images = [];
+      imageInput.addEventListener("change", e=>{
         if(e.target.files.length > 6){
           alert("You can upload max 6 images.");
           e.target.value = "";
+          return;
         }
+        images = Array.from(e.target.files);
+        renderThumbs();
+        updatePreview();
       });
+      function renderThumbs(){
+        thumbPreview.innerHTML = "";
+        images.forEach((file,i)=>{
+          const wrapper = document.createElement("div");
+          wrapper.className = "thumb-wrapper";
+          const img = document.createElement("img");
+          img.src = URL.createObjectURL(file);
+          const btn = document.createElement("button");
+          btn.className = "remove-thumb";
+          btn.innerHTML = "×";
+          btn.onclick = ()=>{ images.splice(i,1); renderThumbs(); updatePreview(); };
+          wrapper.appendChild(img);
+          wrapper.appendChild(btn);
+          thumbPreview.appendChild(wrapper);
+        });
+      }
+
+      // Live preview updates
+      function updatePreview(){
+        document.getElementById("preview-title").textContent = sellForm.title.value || "—";
+        document.getElementById("preview-category").textContent = categorySel.value || "—";
+        document.getElementById("preview-subcategory").textContent = subcategorySel.value ? " / "+subcategorySel.value : "";
+        const priceVal = sellForm.price.value ? Number(sellForm.price.value).toLocaleString("en-IN") : "—";
+        document.getElementById("preview-price").textContent = priceVal;
+        const loc = sellForm.province.value && sellForm.city.value ? sellForm.city.value+", "+sellForm.province.value : "—";
+        document.getElementById("preview-location").textContent = loc;
+        document.getElementById("preview-description").textContent = sellForm.description.value || "—";
+        const imgBox = document.getElementById("preview-images");
+        imgBox.innerHTML = "";
+        images.forEach(file=>{
+          const img = document.createElement("img");
+          img.src = URL.createObjectURL(file);
+          imgBox.appendChild(img);
+        });
+      }
+      sellForm.addEventListener("input", updatePreview);
+
+      // Save draft
+      document.getElementById("save-draft").addEventListener("click", ()=>{
+        const data = new FormData(sellForm);
+        const obj = {};
+        data.forEach((v,k)=> obj[k]=v);
+        localStorage.setItem(draftKey, JSON.stringify(obj));
+        alert("Draft saved!");
+      });
+      // Load draft
+      const draft = localStorage.getItem(draftKey);
+      if(draft){
+        const obj = JSON.parse(draft);
+        Object.keys(obj).forEach(k=>{
+          if(sellForm[k]) sellForm[k].value = obj[k];
+        });
+        updatePreview();
+      }
 
       // Form submit
-      const sellForm = document.getElementById("sell-form");
       sellForm.addEventListener("submit", function(e){
         e.preventDefault();
-
         if(!confirm("Are you sure you want to publish this listing?")) return;
 
-        // TODO: actual save handled in app.js
+        // TODO: save to storage via app.js later
         const modal = document.getElementById("sell-success");
         modal.style.display = "flex";
 
@@ -204,7 +369,11 @@
           if(ev.key === "Escape"){ closeModal(); document.removeEventListener("keydown", escHandler); }
         });
 
+        localStorage.removeItem(draftKey);
         sellForm.reset();
+        images = [];
+        renderThumbs();
+        updatePreview();
       });
     });
   </script>
