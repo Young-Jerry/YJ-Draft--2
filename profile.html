@@ -13,9 +13,11 @@
   <style>
     .profile-header-note { 
       color: var(--muted); 
-      margin-bottom: 8px; 
+      margin-bottom: 1rem; 
     }
   </style>
+
+  <!-- Config + Data -->
   <script src="js/config.js"></script>
   <script src="js/product-data.js"></script>
 </head>
@@ -26,21 +28,15 @@
       <a href="index.html" class="brand">
         <div class="logo">NB</div>
         <div class="brand-text">
-          <div class="brand-title">Nepali Bazar</div>
+          <div class="brand-title"><span class="site-name">Nepali Bazar</span></div>
           <div class="brand-sub">Your profile & listings</div>
         </div>
       </a>
       <nav class="nav">
         <a href="index.html" class="nav-link">Home</a>
-        <a href="products.html" class="nav-link">Shop</a>
+        <a href="products.html" class="nav-link">Products</a>
         <a href="sell.html" class="nav-link cta">Sell</a>
-        <!-- Auth Links -->
-        <a href="login.html" id="login-link" class="nav-link">Login</a>
-        <span id="user-info" class="nav-link" style="display:none;">
-          Hi, <span id="username-display"></span> |
-          <a href="#" id="logout-btn" class="nav-link">Logout</a> |
-          <a href="profile.html" id="profile-link" class="nav-link">Profile</a>
-        </span>
+        <span id="auth-links"></span>
       </nav>
     </div>
   </header>
@@ -49,14 +45,15 @@
   <main class="container main-grid">
     <section class="content">
       <div class="section-head">
-        <h2>Profile - Your Listings</h2>
+        <h2>Your Profile & Listings</h2>
         <div class="controls">
-          <a class="btn btn-primary" href="sell.html">Create Listing</a>
+          <a class="btn btn-primary" href="sell.html">+ Create Listing</a>
         </div>
       </div>
 
       <p class="profile-header-note muted small">
-        This page shows listings posted by you. From here you can remove only your items (admin can remove any).
+        Here you can view and manage items you’ve posted.  
+        You can only remove your own listings (Admin <strong>sohaum</strong> can remove any).
       </p>
 
       <div id="profile-listings" class="card-grid"></div>
@@ -67,9 +64,9 @@
       <div class="ad-slot small"></div>
 
       <div class="sidebar-card">
-        <h3>Profile actions</h3>
+        <h3>Profile Actions</h3>
         <p class="muted small">Signed in as <strong id="profile-username"></strong></p>
-        <p class="muted small">Only items you posted are shown here. Admin (sohaum) can delete all items.</p>
+        <p class="muted small">Only items you posted are shown here.</p>
       </div>
     </aside>
   </main>
@@ -77,7 +74,7 @@
   <!-- Footer -->
   <footer class="site-footer">
     <div class="container footer-inner">
-      <div>© <span id="year"></span> Nepali Bazar</div>
+      <div>© <span id="year"></span> <span class="site-name">Nepali Bazar</span></div>
       <div class="muted">Contact: <a href="mailto:help@nepalibazar.test">help@nepalibazar.test</a></div>
     </div>
   </footer>
@@ -94,6 +91,7 @@
   <script src="js/app.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
+      // footer year
       document.getElementById('year').textContent = new Date().getFullYear();
 
       // enforce login
@@ -104,27 +102,25 @@
         return;
       }
 
-      // show username
+      // header auth state
+      const authLinks = document.getElementById("auth-links");
+      authLinks.innerHTML = `
+        <span class="nav-link">Hi, <b>${user}</b></span> |
+        <a href="#" id="logout-btn" class="nav-link">Logout</a> |
+        <a href="profile.html" class="nav-link active">Profile</a>
+      `;
+      document.getElementById("logout-btn").addEventListener("click", (e) => {
+        e.preventDefault();
+        if(confirm("Are you sure you want to logout?")){
+          localStorage.removeItem("nb_logged_in_user");
+          location.href = "index.html";
+        }
+      });
+
+      // show username in sidebar
       document.getElementById('profile-username').textContent = user;
 
-      // header auth state
-      const loginLink = document.getElementById("login-link");
-      const userInfo = document.getElementById("user-info");
-      const usernameDisplay = document.getElementById("username-display");
-
-      if (user) {
-        loginLink.style.display = "none";
-        userInfo.style.display = "inline-block";
-        usernameDisplay.textContent = user;
-
-        document.getElementById("logout-btn").addEventListener("click", (e) => {
-          e.preventDefault();
-          localStorage.removeItem("nb_logged_in_user");
-          location.reload();
-        });
-      }
-
-      // render profile listings
+      // render listings
       if(window.renderProfilePage) window.renderProfilePage();
     });
   </script>
