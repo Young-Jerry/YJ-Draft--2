@@ -20,19 +20,19 @@
         <div class="logo">NB</div>
         <div class="brand-text">
           <div class="brand-title"><span class="site-name">Nepali Bazar</span></div>
-          <div class="brand-sub">Post your item — Easy & fast</div>
+          <div class="brand-sub">Buy · Sell · Connect</div>
         </div>
       </a>
 
       <nav class="nav">
         <a href="index.html" class="nav-link">Home</a>
         <a href="products.html" class="nav-link">Products</a>
-        <a href="sell.html" class="nav-link cta">Sell</a>
+        <a href="sell.html" class="nav-link cta active">Sell</a>
         <a href="login.html" id="login-link" class="nav-link">Login</a>
         <span id="user-info" class="nav-link" style="display:none;">
           Hi, <span id="username-display"></span> |
           <a href="#" id="logout-btn" class="nav-link">Logout</a> |
-          <a id="profile-link" class="nav-link" href="profile.html">Profile</a>
+          <a href="profile.html" class="nav-link">Profile</a>
         </span>
       </nav>
     </div>
@@ -42,7 +42,7 @@
   <main class="container">
     <div class="form-wrapper">
       <h2>Create a Listing</h2>
-      <p>Please provide accurate details. Listings expire after 7 days.</p>
+      <p class="muted">Fill in the details carefully. Listings expire after 7 days.</p>
 
       <form id="sell-form">
         <label>Title
@@ -78,7 +78,7 @@
         </label>
 
         <label>Contact (Phone or Email)
-          <input name="contact" id="contact-input" required class="input" placeholder="98XXXXXXXX (10 digits) or email@example.com" />
+          <input name="contact" id="contact-input" required class="input" placeholder="98XXXXXXXX or email@example.com" />
         </label>
 
         <label>Description
@@ -124,10 +124,9 @@
   <script src="js/app.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function(){
-      // Year
       document.getElementById('year').textContent = new Date().getFullYear();
 
-      // Require login
+      // Restrict to logged-in users
       const user = localStorage.getItem('nb_logged_in_user');
       if(!user){
         alert('You must log in to post a listing!');
@@ -135,7 +134,7 @@
         return;
       }
 
-      // Provinces & Cities
+      // Provinces & cities
       const provinces = {
         "Province 1": ["Biratnagar","Dharan","Itahari","Birtamod"],
         "Madhesh": ["Janakpur","Birgunj","Kalaiya"],
@@ -170,7 +169,7 @@
         contactInput.setCustomValidity(phone.test(v) || email.test(v) ? "" : "Enter valid phone or email");
       });
 
-      // Expiry date max 7 days
+      // Expiry date: max 7 days
       const expiry = document.getElementById('expiryDate');
       const today = new Date();
       const max = new Date();
@@ -178,7 +177,7 @@
       expiry.min = today.toISOString().split("T")[0];
       expiry.max = max.toISOString().split("T")[0];
 
-      // Image upload limit
+      // Image limit
       document.getElementById('image-input').addEventListener('change', e => {
         if(e.target.files.length > 6){
           alert("You can upload max 6 images.");
@@ -186,32 +185,25 @@
         }
       });
 
-      // Form submit -> show modal
+      // Form submit
       const sellForm = document.getElementById("sell-form");
       sellForm.addEventListener("submit", function(e){
         e.preventDefault();
 
-        // (Here you’d normally save the listing)
+        if(!confirm("Are you sure you want to publish this listing?")) return;
+
+        // TODO: actual save handled in app.js
         const modal = document.getElementById("sell-success");
         modal.style.display = "flex";
 
-        // Close on button
-        modal.querySelector(".close").onclick = () => modal.style.display = "none";
-
-        // Close on ESC
+        // Close modal
+        const closeModal = () => modal.style.display = "none";
+        modal.querySelector(".close").onclick = closeModal;
+        window.onclick = (ev) => { if(ev.target === modal) closeModal(); };
         document.addEventListener("keydown", function escHandler(ev){
-          if(ev.key === "Escape"){
-            modal.style.display = "none";
-            document.removeEventListener("keydown", escHandler);
-          }
+          if(ev.key === "Escape"){ closeModal(); document.removeEventListener("keydown", escHandler); }
         });
 
-        // Close when clicking outside
-        window.onclick = (event) => {
-          if(event.target === modal) modal.style.display = "none";
-        };
-
-        // Reset form
         sellForm.reset();
       });
     });
