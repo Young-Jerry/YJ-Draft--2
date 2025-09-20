@@ -1,4 +1,4 @@
-/* ========================================================================== 
+/* ==========================================================================
    app.js – Comprehensive controller for Nepali Bazar
    Features: custom modals, pin limit, gallery, confirmations, search, profile rendering
    ========================================================================== */
@@ -91,485 +91,392 @@
     return users.some((usr) => usr.username === u && usr.role === "admin");
   };
 
-  // ------------------ GLOBAL MODAL SYSTEM (creates if missing) ------------------
-  let globalModal;
-  function ensureModal() {
-    globalModal = $("#nb-modal");
-    if (globalModal) return globalModal;
-    // create one
-    globalModal = document.createElement("div");
-    globalModal.id = "nb-modal";
-    globalModal.className = "nb-modal";
-    globalModal.innerHTML = `<div class="nb-modal-content"><button class="nb-modal-close" title="Close">✕</button><div id="nb-modal-body"></div></div>`;
-    document.body.appendChild(globalModal);
-    initModalBehavior(globalModal);
-    return globalModal;
-  }
-
-  function initModalBehavior(modal) {
-    const closeBtn = modal.querySelector(".nb-modal-close");
-    closeBtn?.addEventListener("click", () => closeModal());
-    // click outside
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) closeModal();
-    });
-    // ESC
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeModal();
-    });
-  }
-
-  function openModal(contentHtmlOrNode) {
-    const modal = ensureModal();
-    const body = modal.querySelector("#nb-modal-body");
-    if (typeof contentHtmlOrNode === "string") body.innerHTML = contentHtmlOrNode;
-    else {
-      body.innerHTML = "";
-      body.appendChild(contentHtmlOrNode);
-    }
-    modal.classList.add("active");
-    return modal;
-  }
-  function closeModal() {
-    const modal = ensureModal();
-    modal.classList.remove("active");
-  }
-
-  // ------------------ CONFIRMATION (returns Promise) ------------------
-  function showConfirm(message, opts = {}) {
-    // returns a promise that resolves true/false
-    return new Promise((resolve) => {
-      const wrapper = document.createElement("div");
-      wrapper.innerHTML = `
-        <h2>Confirm</h2>
-        <p>${escapeHtml(message)}</p>
-        <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">
-          <button class="btn btn-ghost cancel">Cancel</button>
-          <button class="btn btn-primary confirm">${escapeHtml(opts.confirmText || "Confirm")}</button>
-        </div>
-      `;
-      const modal = openModal(wrapper);
-      wrapper.querySelector(".cancel").onclick = () => {
-        closeModal();
-        resolve(false);
-      };
-      wrapper.querySelector(".confirm").onclick = () => {
-        closeModal();
-        resolve(true);
-      };
-    });
-  }
-
   // ------------------ AUTH UI ------------------
-  const initAuthUI = () => {
+  const renderAuthLinks = () => {
+    const el = $("#auth-links");
+    if (!el) return;
     const user = getCurrentUser();
-    const loginLink = $("#login-link");
-    const userInfo = $("#user-info");
-    const usernameDisplay = $("#username-display");
-    if (!loginLink || !userInfo || !usernameDisplay) return;
-
     if (user) {
-      loginLink.style.display = "none";
-      userInfo.style.display = "inline-block";
-      usernameDisplay.textContent = user;
-      $("#logout-btn")?.addEventListener("click", async (e) => {
+      el.innerHTML = `
+        <span>Welcome, <b>${escapeHtml(user)}</b></span> |
+        <a href="#" id="logout-btn" class="nav-link">Logout</a>
+      `;
+      $("#logout-btn").addEventListener("click", (e) => {
         e.preventDefault();
-        const ok = await showConfirm("Are you sure you want to logout?", { confirmText: "Logout" });
-        if (ok) {
-          logoutUser();
-          location.reload();
-        }
+        logoutUser();
+        location.reload();
       });
     } else {
-      loginLink.style.display = "inline-block";
-      userInfo.style.display = "none";
+      el.innerHTML = `<a href="login.html" class="nav-link">Login</a>`;
     }
   };
 
-  // ------------------ CARDS ------------------
-  const canDelete = (p) => isAdmin() || (getCurrentUser() && getCurrentUser() === p.seller);
+  // ------------------ MODALS ------------------
+  const Modal = {
+    show(msg, opts = {}) {
+      let modal = $("#nb-modal");
+      if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "nb-modal";
+        modal.className = "nb-modal-overlay";
+        modal.innerHTML = `
+          <div class="nb-modal">
+            <div class="nb-modal-content"></div>
+            <div class="nb-modal-actions"></div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      }
+      $(".nb-modal-content", modal).innerHTML = msg;
+      const actions = $(".nb-modal-actions", modal);
+      actions.innerHTML = "";
 
-  function buildCard(p, compact = false) {
+      const btn = document.createElement("button");
+      btn.className = "btn btn-primary";
+      btn.textContent = opts.okText || "OK";
+      btn.addEventListener("click", () => this.hide());
+      actions.appendChild(btn);
+
+      modal.style.display = "flex";
+    },
+    hide() {
+      const modal = $("#nb-modal");
+      if (modal) modal.style.display = "none";
+    },
+  };
+
+  const Confirm = (msg, cb) => {
+    let modal = $("#nb-confirm");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "nb-confirm";
+      modal.className = "nb-modal-overlay";
+      modal.innerHTML = `
+        <div class="nb-modal">
+          <div class="nb-modal-content"></div>
+          <div class="nb-modal-actions"></div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+    $(".nb-modal-content", modal).innerHTML = msg;
+    const actions = $(".nb-modal-actions", modal);
+    actions.innerHTML = "";
+
+    const yes = document.createElement("button");
+    yes.className = "btn btn-danger";
+    yes.textContent = "Yes";
+    yes.addEventListener("click", () => {
+      modal.style.display = "none";
+      cb(true);
+    });
+    actions.appendChild(yes);
+
+    const no = document.createElement("button");
+    no.className = "btn";
+    no.textContent = "No";
+    no.addEventListener("click", () => {
+      modal.style.display = "none";
+      cb(false);
+    });
+    actions.appendChild(no);
+
+    modal.style.display = "flex";
+  };
+
+  // ------------------ PIN SYSTEM ------------------
+  const getPinnedIds = () => readJSON("nb_pins", []);
+  const savePinnedIds = (ids) => writeJSON("nb_pins", ids);
+
+  const togglePin = (id) => {
+    let pins = getPinnedIds();
+    if (pins.includes(id)) {
+      pins = pins.filter((x) => x !== id);
+    } else {
+      if (pins.length >= PIN_LIMIT) {
+        Modal.show(`❌ You can only pin up to ${PIN_LIMIT} listings.`);
+        return;
+      }
+      pins.push(id);
+    }
+    savePinnedIds(pins);
+    renderAllProducts();
+  };
+
+  const isPinned = (id) => getPinnedIds().includes(id);
+  // ------------------ RENDERING PRODUCTS ------------------
+  const card = (p, compact = false) => {
     const div = document.createElement("div");
     div.className = compact ? "card compact" : "card";
     div.dataset.id = p.id;
 
-    // actions depending on compact/full and permissions
-    let actions = document.createElement("div");
-    actions.className = "actions";
-
-    const thumbHtml = `<div class="thumb"><img src="${escapeHtml((p.images || [])[0] || PLACEHOLDER_IMG)}" /></div>`;
-    const titleHtml = `<div class="title">${escapeHtml(p.title)} ${p.pinned ? "📌" : ""}</div>`;
-    const priceHtml = `<div class="price">${p.price ? "Rs. " + numberWithCommas(p.price) : "FREE"}</div>`;
-
-    // View button (always present)
-    const viewBtn = document.createElement("button");
-    viewBtn.className = "btn view-btn";
-    viewBtn.textContent = "View";
-    viewBtn.addEventListener("click", () => showViewModal(p));
-    actions.appendChild(viewBtn);
-
+    let actions = "";
     if (!compact) {
-      // Delete (if allowed)
-      if (canDelete(p)) {
-        const del = document.createElement("button");
-        del.className = "btn delete";
-        del.textContent = "Delete";
-        del.addEventListener("click", async () => {
-          const ok = await showConfirm("Delete this ad? This action cannot be undone.", { confirmText: "Delete" });
-          if (!ok) return;
+      actions = `
+        <div class="actions">
+          <button class="btn view-btn">View</button>
+          ${canDelete(p) ? `<button class="btn delete">Delete</button>` : ""}
+          <button class="btn ${isPinned(p.id) ? "unpin" : "pin"}">
+            ${isPinned(p.id) ? "Unpin" : "Pin"}
+          </button>
+        </div>
+      `;
+    } else {
+      actions = `
+        <div class="actions">
+          <button class="btn view-btn">View</button>
+        </div>
+      `;
+    }
+
+    div.innerHTML = `
+      <div class="thumb">
+        <img src="${escapeHtml((p.images || [])[0] || PLACEHOLDER_IMG)}" />
+      </div>
+      <div class="title">${escapeHtml(p.title)} ${isPinned(p.id) ? "📌" : ""}</div>
+      <div class="price">${p.price ? "Rs. " + numberWithCommas(p.price) : "FREE"}</div>
+      ${actions}
+    `;
+
+    // event: view
+    div.querySelector(".view-btn")?.addEventListener("click", () => showGallery(p));
+
+    // event: delete
+    div.querySelector(".delete")?.addEventListener("click", () => {
+      Confirm("Delete this ad?", (ok) => {
+        if (ok) {
           const list = getAllProducts().filter((x) => x.id !== p.id);
           saveProducts(list);
-          renderAll();
-        });
-        actions.appendChild(del);
-      }
-      // Pin/Unpin (admin only)
-      if (isAdmin()) {
-        const pinBtn = document.createElement("button");
-        pinBtn.className = "btn " + (p.pinned ? "unpin" : "pin");
-        pinBtn.textContent = p.pinned ? "Unpin" : "Pin";
-        pinBtn.addEventListener("click", async () => {
-          if (p.pinned) {
-            const ok = await showConfirm("Unpin this ad?", { confirmText: "Unpin" });
-            if (!ok) return;
-            updateProduct(p.id, { pinned: false, pinnedAt: null });
-            renderAll();
-          } else {
-            // check pin limit
-            const pinnedCount = getActiveProducts().filter((x) => x.pinned).length;
-            if (pinnedCount >= PIN_LIMIT) {
-              showPinLimitModal(p);
-              return;
-            }
-            const ok = await showConfirm("Pin this ad to hero? (Pinned ads appear first)", { confirmText: "Pin" });
-            if (!ok) return;
-            // set pinned and pinnedAt so newest pinned move first
-            updateProduct(p.id, { pinned: true, pinnedAt: nowIso() });
-            renderAll();
-          }
-        });
-        actions.appendChild(pinBtn);
-      }
-    } else {
-      // compact - make view button full width maybe styled in CSS
-    }
-
-    div.innerHTML = thumbHtml + titleHtml + priceHtml;
-    div.appendChild(actions);
-    return div;
-  }
-
-  // ------------------ VIEW MODAL (gallery + details) ------------------
-  function showViewModal(p) {
-    const modal = ensureModal();
-    const body = document.createElement("div");
-    body.className = "view-modal-body";
-
-    // images
-    const imgs = p.images && p.images.length ? p.images.slice(0, MAX_IMAGES) : [PLACEHOLDER_IMG];
-    let idx = 0;
-
-    const carousel = document.createElement("div");
-    carousel.className = "carousel";
-    const imgEl = document.createElement("img");
-    imgEl.src = imgs[idx];
-
-    const prev = document.createElement("button");
-    prev.className = "arrow left";
-    prev.innerHTML = "&#10094;";
-    prev.addEventListener("click", () => {
-      idx = (idx - 1 + imgs.length) % imgs.length;
-      imgEl.src = imgs[idx];
-      updateIndex();
-    });
-
-    const next = document.createElement("button");
-    next.className = "arrow right";
-    next.innerHTML = "&#10095;";
-    next.addEventListener("click", () => {
-      idx = (idx + 1) % imgs.length;
-      imgEl.src = imgs[idx];
-      updateIndex();
-    });
-
-    const idxIndicator = document.createElement("div");
-    idxIndicator.style.marginTop = "8px";
-    idxIndicator.style.fontSize = "0.95rem";
-    idxIndicator.style.color = "var(--muted)";
-    function updateIndex() {
-      idxIndicator.textContent = `${idx + 1} / ${imgs.length}`;
-    }
-    updateIndex();
-
-    carousel.appendChild(prev);
-    carousel.appendChild(imgEl);
-    carousel.appendChild(next);
-
-    // details
-    const titleEl = document.createElement("h2");
-    titleEl.textContent = p.title;
-    const desc = document.createElement("p");
-    desc.textContent = p.description || "";
-    const contact = document.createElement("p");
-    contact.innerHTML = `<b>Contact:</b> ${escapeHtml(p.contact || "N/A")}`;
-    const meta = document.createElement("p");
-    meta.className = "muted small";
-    meta.textContent = `Posted by ${p.seller || "N/A"} on ${p.createdAt ? p.createdAt.split(" ")[0] : "N/A"}`;
-
-    const content = document.createElement("div");
-    content.appendChild(titleEl);
-    content.appendChild(carousel);
-    content.appendChild(idxIndicator);
-    content.appendChild(desc);
-    content.appendChild(contact);
-    content.appendChild(meta);
-
-    // render body (with close button kept in modal header)
-    body.appendChild(content);
-    openModal(body);
-  }
-
-  // ------------------ PIN LIMIT MODAL ------------------
-  function showPinLimitModal(newProduct) {
-    const pinned = getActiveProducts().filter((p) => p.pinned).sort((a, b) => new Date(b.pinnedAt || b.createdAt) - new Date(a.pinnedAt || a.createdAt)).slice(0, PIN_LIMIT);
-    const container = document.createElement("div");
-    container.innerHTML = `<h2>Pin limit reached (${PIN_LIMIT})</h2><p>Unpin one of the pinned ads to replace it with "${escapeHtml(newProduct.title)}":</p>`;
-    const list = document.createElement("div");
-    list.style.display = "grid";
-    list.style.gap = "8px";
-    list.style.marginTop = "12px";
-
-    pinned.forEach((p) => {
-      const row = document.createElement("div");
-      row.style.display = "flex";
-      row.style.justifyContent = "space-between";
-      row.style.alignItems = "center";
-      row.style.background = "rgba(255,255,255,0.03)";
-      row.style.padding = "8px";
-      row.style.borderRadius = "8px";
-      row.innerHTML = `<div style="display:flex;gap:10px;align-items:center">
-                        <img src="${escapeHtml((p.images||[PLACEHOLDER_IMG])[0])}" style="width:56px;height:40px;object-fit:cover;border-radius:6px" />
-                        <div>
-                          <div style="font-weight:700">${escapeHtml(p.title)}</div>
-                          <div class="muted small">${escapeHtml(p.seller || "")}</div>
-                        </div>
-                      </div>`;
-      const btn = document.createElement("button");
-      btn.className = "btn btn-ghost";
-      btn.textContent = "Unpin & Replace";
-      btn.addEventListener("click", async () => {
-        const ok = await showConfirm(`Unpin "${p.title}" and pin "${newProduct.title}"?`, { confirmText: "Unpin & Replace" });
-        if (!ok) return;
-        updateProduct(p.id, { pinned: false, pinnedAt: null });
-        // pin new product (ensure it exists in storage - if not add it)
-        const existing = getAllProducts().some((x) => x.id === newProduct.id);
-        if (!existing) {
-          // add product (shouldn't normally happen)
-          addProduct({ ...newProduct, pinned: true, pinnedAt: nowIso() });
-        } else {
-          updateProduct(newProduct.id, { pinned: true, pinnedAt: nowIso() });
+          renderAllProducts();
         }
-        closeModal();
-        renderAll();
       });
-      row.appendChild(btn);
-      list.appendChild(row);
     });
 
-    container.appendChild(list);
-    openModal(container);
-  }
+    // event: pin/unpin
+    div.querySelector(".pin")?.addEventListener("click", () => togglePin(p.id));
+    div.querySelector(".unpin")?.addEventListener("click", () => togglePin(p.id));
 
-  // ------------------ RENDERERS ------------------
+    return div;
+  };
+
   const renderGrid = (sel, list, compact = false) => {
     $$(sel).forEach((grid) => {
       grid.innerHTML = "";
-      list.forEach((p) => grid.appendChild(buildCard(p, compact)));
+      list.forEach((p) => grid.appendChild(card(p, compact)));
     });
   };
 
   const renderHeroPinned = () => {
-    const pinnedWrap = $("#pinned-ads");
-    if (!pinnedWrap) return;
-    const pinned = getActiveProducts()
-      .filter((p) => p.pinned)
-      .sort((a, b) => new Date(b.pinnedAt || b.createdAt) - new Date(a.pinnedAt || a.createdAt))
-      .slice(0, PIN_LIMIT);
-    pinnedWrap.innerHTML = "";
-    pinned.forEach((p) => pinnedWrap.appendChild(buildCard(p, true)));
+    const wrap = $("#pinned-ads");
+    if (!wrap) return;
+    const pinned = getActiveProducts().filter((p) => isPinned(p.id)).slice(0, PIN_LIMIT);
+    wrap.innerHTML = "";
+    pinned.forEach((p) => wrap.appendChild(card(p, true)));
   };
 
-  const renderAll = () => {
-    // pinned first (pinned ordered by pinnedAt desc), then rest by createdAt desc
-    const products = getActiveProducts().sort((a, b) => {
-      if (a.pinned && !b.pinned) return -1;
-      if (!a.pinned && b.pinned) return 1;
-      if (a.pinned && b.pinned) {
-        return new Date(b.pinnedAt || b.createdAt) - new Date(a.pinnedAt || a.createdAt);
-      }
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    });
+  const renderAllProducts = () => {
+    const products = getActiveProducts().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     renderGrid("#home-grid, .home-grid, #products-grid", products);
     renderHeroPinned();
   };
 
-  // ------------------ SELL FORM HANDLER ------------------
+  // ------------------ PRODUCT GALLERY MODAL ------------------
+  const showGallery = (p) => {
+    let modal = $("#gallery-modal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "gallery-modal";
+      modal.className = "nb-modal-overlay";
+      modal.innerHTML = `
+        <div class="gallery-box">
+          <span class="close">&times;</span>
+          <div class="gallery-content">
+            <button class="arrow left">&#9664;</button>
+            <img class="gallery-img" src="" />
+            <button class="arrow right">&#9654;</button>
+          </div>
+          <div class="gallery-info"></div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    const imgEl = $(".gallery-img", modal);
+    const infoEl = $(".gallery-info", modal);
+    const closeBtn = $(".close", modal);
+    const leftBtn = $(".left", modal);
+    const rightBtn = $(".right", modal);
+
+    let idx = 0;
+    const imgs = p.images && p.images.length ? p.images : [PLACEHOLDER_IMG];
+
+    const renderImage = () => {
+      imgEl.src = imgs[idx];
+      infoEl.innerHTML = `
+        <h2>${escapeHtml(p.title)}</h2>
+        <p>${escapeHtml(p.description || "")}</p>
+        <p><b>Contact:</b> ${escapeHtml(p.contact || "N/A")}</p>
+        <p><b>Price:</b> ${p.price ? "Rs. " + numberWithCommas(p.price) : "FREE"}</p>
+      `;
+    };
+
+    renderImage();
+
+    leftBtn.onclick = () => {
+      idx = (idx - 1 + imgs.length) % imgs.length;
+      renderImage();
+    };
+    rightBtn.onclick = () => {
+      idx = (idx + 1) % imgs.length;
+      renderImage();
+    };
+
+    closeBtn.onclick = () => (modal.style.display = "none");
+    modal.style.display = "flex";
+
+    document.onkeydown = (e) => {
+      if (e.key === "Escape") modal.style.display = "none";
+      if (e.key === "ArrowLeft") leftBtn.click();
+      if (e.key === "ArrowRight") rightBtn.click();
+    };
+  };
+  // ------------------ SELL FORM ------------------
   const initSellForm = () => {
     const form = $("#sell-form");
     if (!form) return;
 
-    form.addEventListener("submit", async (e) => {
+    form.addEventListener("submit", (e) => {
       e.preventDefault();
-
-      // require login
-      if (!getCurrentUser()) {
-        alert("You must log in to post a listing.");
-        window.location.href = "login.html";
-        return;
-      }
-
-      const confirmed = await showConfirm("Post this ad?", { confirmText: "Post" });
-      if (!confirmed) return;
-
       const fd = new FormData(form);
-      const files = fd.getAll("images").slice(0, MAX_IMAGES);
-      const images = [];
-      let processed = 0;
+      const obj = {
+        id: uid(),
+        title: fd.get("title"),
+        description: fd.get("description"),
+        category: fd.get("category"),
+        price: parseInt(fd.get("price") || "0"),
+        contact: fd.get("contact"),
+        images: (fd.get("images") || "").split(",").map((x) => x.trim()).filter(Boolean),
+        owner: currentUser()?.username || "guest",
+        createdAt: new Date().toISOString(),
+      };
 
-      if (!files.length) {
-        finalize([]);
-      } else {
-        files.forEach((f) => {
-          if (f && f.type && f.type.startsWith("image/")) {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-              images.push(ev.target.result);
-              processed++;
-              if (processed === files.length) finalize(images);
-            };
-            reader.readAsDataURL(f);
-          } else {
-            processed++;
-            if (processed === files.length) finalize(images);
-          }
-        });
-      }
+      const list = getAllProducts();
+      list.push(obj);
+      saveProducts(list);
 
-      function finalize(imgs) {
-        const product = {
-          title: fd.get("title"),
-          category: fd.get("category"),
-          price: parseFloat(fd.get("price") || "0"),
-          province: fd.get("province"),
-          city: fd.get("city"),
-          contact: fd.get("contact"),
-          description: fd.get("description"),
-          expiryDate: fd.get("expiryDate"),
-          images: imgs,
-          seller: getCurrentUser(),
-          pinned: false,
-          pinnedAt: null,
-          createdAt: nowIso(),
-          id: "p-" + Date.now(),
-        };
-        addProduct(product);
-
-        const msg = $("#sell-msg");
-        if (msg) {
-          msg.textContent = "✅ Listing published!";
-          msg.style.color = "limegreen";
-        }
-
-        // show success modal
-        openModal(`<h2>Listing Published 🎉</h2><p>Your item has been listed successfully.</p><div style="text-align:right;margin-top:12px"><button class="btn btn-primary close-ok">Done</button></div>`);
-        $("#nb-modal").querySelector(".close-ok").onclick = closeModal;
-
-        form.reset();
-        renderAll();
-      }
+      alert("Ad posted!");
+      form.reset();
+      window.location.href = "products.html";
     });
   };
 
-  // ------------------ PROFILE RENDER (exposed) ------------------
-  function renderProfilePage() {
-    const username = getCurrentUser();
-    if (!username) return;
+  // ------------------ CONFIRM BOX ------------------
+  const Confirm = (msg, cb) => {
+    let box = $("#confirm-box");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "confirm-box";
+      box.className = "nb-modal";
+      box.innerHTML = `
+        <div class="nb-modal-content">
+          <p id="confirm-msg"></p>
+          <div class="form-actions">
+            <button id="c-yes" class="btn btn-primary">Yes</button>
+            <button id="c-no" class="btn btn-ghost">No</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(box);
+    }
+
+    $("#confirm-msg").textContent = msg;
+    box.style.display = "flex";
+
+    $("#c-yes").onclick = () => {
+      box.style.display = "none";
+      cb(true);
+    };
+    $("#c-no").onclick = () => {
+      box.style.display = "none";
+      cb(false);
+    };
+  };
+
+  // ------------------ SEARCH ------------------
+  const initSearch = () => {
+    const input = $("#header-search");
+    if (!input) return;
+    input.addEventListener("input", () => {
+      const q = input.value.toLowerCase();
+      const products = getActiveProducts().filter(
+        (p) =>
+          p.title.toLowerCase().includes(q) ||
+          (p.description || "").toLowerCase().includes(q) ||
+          (p.category || "").toLowerCase().includes(q)
+      );
+      renderGrid("#products-grid", products);
+    });
+  };
+
+  // ------------------ FILTERS ------------------
+  const initFilters = () => {
+    const bar = $(".filters-bar");
+    if (!bar) return;
+
+    const catSel = $("select[name=category]", bar);
+    const priceSel = $("select[name=price]", bar);
+
+    const applyFilters = () => {
+      let list = getActiveProducts();
+
+      if (catSel && catSel.value) {
+        list = list.filter((p) => (p.category || "").toLowerCase() === catSel.value.toLowerCase());
+      }
+
+      if (priceSel && priceSel.value) {
+        const [min, max] = priceSel.value.split("-").map((x) => parseInt(x));
+        list = list.filter((p) => (!min || p.price >= min) && (!max || p.price <= max));
+      }
+
+      renderGrid("#products-grid", list);
+    };
+
+    catSel?.addEventListener("change", applyFilters);
+    priceSel?.addEventListener("change", applyFilters);
+  };
+  // ------------------ PROFILE RENDER ------------------
+  const renderProfilePage = () => {
     const wrap = $("#profile-listings");
     if (!wrap) return;
-    const my = getActiveProducts().filter((p) => p.seller === username);
+    const u = currentUser();
+    if (!u) {
+      wrap.innerHTML = "<p>You must be logged in to view your listings.</p>";
+      return;
+    }
+    const my = getActiveProducts().filter((p) => p.owner === u.username);
     wrap.innerHTML = "";
-    my.forEach((p) => {
-      const card = buildCard(p, false);
-      // delete handler already present in buildCard
-      wrap.appendChild(card);
-    });
-  }
-  window.renderProfilePage = renderProfilePage;
-
-  // ------------------ SEARCH HOOK (products page) ------------------
-  function initSearchHooks() {
-    // index.html search form stores nb_search_query and navigates to products.html (your HTML already does this)
-    // here we read nb_search_query on products page and apply filter
-    const q = localStorage.getItem("nb_search_query");
-    if (!q) return;
-
-    // apply filter on products grid (if present)
-    const searchBox = $("#search-box") || $("#filter-search") || $("#home-search");
-    if (searchBox) {
-      // set value if input exists
-      if (searchBox.tagName === "INPUT" || searchBox.tagName === "TEXTAREA") searchBox.value = q;
-    }
-
-    // filter products and display
-    const all = getActiveProducts();
-    const qq = q.toLowerCase();
-    const filtered = all.filter((p) => {
-      return (
-        (p.title && p.title.toLowerCase().includes(qq)) ||
-        (p.category && p.category.toLowerCase().includes(qq)) ||
-        (p.description && p.description.toLowerCase().includes(qq)) ||
-        (p.city && p.city.toLowerCase().includes(qq)) ||
-        (p.province && p.province.toLowerCase().includes(qq)) ||
-        (p.seller && p.seller.toLowerCase().includes(qq))
-      );
-    });
-    // render filtered results on products grid (override)
-    if ($("#products-grid")) {
-      renderGrid("#products-grid", filtered, false);
-    }
-    // clear stored query so it doesn't persist repeatedly
-    localStorage.removeItem("nb_search_query");
-  }
-
-  // ------------------ MODAL BEHAVIOUR INIT ------------------
-  const initModalClose = () => {
-    ensureModal(); // create and init handlers
+    my.forEach((p) => wrap.appendChild(buildCard(p)));
   };
-
-  // ------------------ PAGE SPECIFIC: ensure hero pinned click doesn't open on hover
-  // (all view opening is triggered by view button only - implemented above)
 
   // ------------------ INIT ------------------
   document.addEventListener("DOMContentLoaded", () => {
-    ensureDefaultUsers();
+    ensureUsers();
     initAuthUI();
     initSellForm();
-    initModalClose();
+    initSearch();
+    initFilters();
     renderAll();
-    initSearchHooks();
+    renderProfilePage();
 
-    // wire header year if present
+    // dynamic year
     const yr = $("#year");
     if (yr) yr.textContent = new Date().getFullYear();
 
-    // expose logout helper for console / other uses
-    window.NB_LOGOUT = async () => {
-      const ok = await showConfirm("Are you sure you want to logout?", { confirmText: "Logout" });
-      if (ok) {
-        logoutUser();
-        location.reload();
-      }
+    // expose helpers
+    window.NB = {
+      logout: logout,
+      renderProfilePage,
+      renderAll,
     };
   });
 })();
