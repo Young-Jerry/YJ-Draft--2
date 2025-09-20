@@ -1,6 +1,6 @@
 /* === Variables === */
 :root {
-  --bg-body: #0b0f1a;     /* fixed solid background */
+  --bg-body: #0b0f1a;     /* single solid background */
   --bg-1: #0b0f1a;
   --bg-2: #071027;
   --neon-1: #00e6ff;
@@ -17,7 +17,7 @@
 html, body { height: 100%; }
 body {
   font-family: "Inter", system-ui, sans-serif;
-  background: var(--bg-body);   /* solid background */
+  background: var(--bg-body);
   color: #e6f0ff;
   min-height: 100vh;
   line-height: 1.6;
@@ -64,6 +64,22 @@ body {
   color: #041026;
   font-weight: 700;
   box-shadow: 0 0 15px var(--neon-1);
+}
+
+/* === Header Search Box === */
+#header-search {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  font-size: 0.95rem;
+  transition: border 0.25s, box-shadow 0.25s;
+}
+#header-search:focus {
+  border-color: var(--neon-1);
+  box-shadow: 0 0 10px var(--neon-1);
+  outline: none;
 }
 
 /* === Hero === */
@@ -117,7 +133,6 @@ body {
   border: 1px solid rgba(255,255,255,0.08);
   text-align: left;
   transition: transform 0.25s, box-shadow 0.25s;
-  position: relative;
 }
 .card.compact:hover {
   transform: translateY(-4px);
@@ -145,7 +160,6 @@ body {
   color: var(--neon-1);
   margin-bottom: 4px;
 }
-/* View button always visible */
 .card.compact .view-btn {
   margin-top: 6px;
   width: 100%;
@@ -154,54 +168,14 @@ body {
   background: linear-gradient(90deg, var(--neon-1), var(--neon-2));
   color: #041026;
   font-weight: 700;
-  cursor: pointer;
   border: none;
-  text-align: center;
+  cursor: pointer;
   transition: all 0.25s;
 }
 .card.compact .view-btn:hover {
   background: linear-gradient(90deg, var(--neon-2), var(--neon-1));
   color: #fff;
 }
-
-/* === Buttons === */
-.btn {
-  display: inline-block;
-  padding: 0.9rem 1.5rem;
-  border-radius: 999px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.25s ease;
-  cursor: pointer;
-}
-.btn-primary {
-  background: linear-gradient(90deg, var(--neon-1), var(--neon-2));
-  color: #041026;
-  box-shadow: 0 0 15px var(--neon-1);
-}
-.btn-primary:hover {
-  background: linear-gradient(90deg, var(--neon-2), var(--neon-1));
-  box-shadow: 0 0 20px var(--neon-2);
-}
-.btn-ghost {
-  border: 2px solid var(--neon-1);
-  color: var(--neon-1);
-}
-.btn-ghost:hover {
-  background: var(--neon-1);
-  color: #041026;
-}
-
-/* === Main Layout === */
-.main-grid {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 20px;
-  margin-top: 20px;
-}
-.content { padding-right: 10px; }
-.section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; }
-.small { font-size: 0.85rem; color: var(--muted); }
 
 /* === Cards === */
 .card-grid {
@@ -328,35 +302,6 @@ form textarea { resize: vertical; min-height: 100px; }
   min-width: 160px;
 }
 
-/* === Responsive === */
-@media(max-width: 980px) {
-  .main-grid { grid-template-columns: 1fr; }
-  .hero h1 { font-size: 2.2rem; }
-  .nav { gap: 8px; }
-  .card .thumb { height: 140px; }
-}
-@media(max-width: 600px) {
-  .hero { padding: 2rem 1rem; }
-  .btn { padding: 0.7rem 1.2rem; }
-  form { padding: 16px; }
-}
-
-/* === Header Search Box === */
-#header-search {
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.05);
-  color: #fff;
-  font-size: 0.95rem;
-  transition: border 0.25s, box-shadow 0.25s;
-}
-#header-search:focus {
-  border-color: var(--neon-1);
-  box-shadow: 0 0 10px var(--neon-1);
-  outline: none;
-}
-
 /* === Modal === */
 .nb-modal {
   position: fixed;
@@ -376,6 +321,7 @@ form textarea { resize: vertical; min-height: 100px; }
   width: 90%;
   box-shadow: 0 12px 32px rgba(0,0,0,0.6);
   animation: modalIn 0.3s ease forwards;
+  position: relative;
 }
 .nb-modal-content h2 {
   font-family: "Orbitron", sans-serif;
@@ -386,16 +332,28 @@ form textarea { resize: vertical; min-height: 100px; }
 .nb-modal-content img { width: 100%; border-radius: 10px; margin-bottom: 1rem; }
 .nb-modal-content p { margin-bottom: 0.8rem; }
 .nb-modal-content .close {
-  display: inline-block;
-  margin-top: 1rem;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
+  position: absolute; top: 10px; right: 10px;
+  padding: 6px 10px;
+  border-radius: 50%;
   background: var(--neon-1);
   color: #041026;
   font-weight: 700;
-  cursor: pointer;
   border: none;
+  cursor: pointer;
   transition: all 0.2s;
 }
 .nb-modal-content .close:hover { background: var(--neon-2); color: #fff; }
 @keyframes modalIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* === Responsive === */
+@media(max-width: 980px) {
+  .main-grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 2.2rem; }
+  .nav { gap: 8px; }
+  .card .thumb { height: 140px; }
+}
+@media(max-width: 600px) {
+  .hero { padding: 2rem 1rem; }
+  .btn { padding: 0.7rem 1.2rem; }
+  form { padding: 16px; }
+}
