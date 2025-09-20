@@ -1,9 +1,10 @@
-/* ==========================================================================
+/* ========================================================================== 
    app.js – Nepali Bazar (FINAL single-file)
    - Purpose: single controller for index.html, sell.html, products.html, profile.html
    - Features: auth, products CRUD, pins (top 5), wishlist, modal/confirm,
                gallery, sell form (images->dataURL), draft save/load, pagination,
-               search, filters, owner actions (edit/delete), debug API
+               search (title-only on products page), filters, owner/admin rules,
+               debug API
    ========================================================================== */
 (function () {
   "use strict";
@@ -17,7 +18,7 @@
   const DRAFT_KEY = "nb_sell_draft_v1";
   const PLACEHOLDER_IMG = "assets/images/placeholder.jpg";
   const PIN_LIMIT = 5;
-  const MAX_IMAGES = 6;
+  const MAX_IMAGES = 3; // per your request: max 3 images
   const MAX_IMAGE_BYTES = 600 * 1024; // ~600KB soft warning
   const PAGE_SIZE = 12;
 
@@ -63,7 +64,11 @@
   }
   function currentUser() {
     const u = localStorage.getItem(LOGGED_IN_KEY);
-    return u ? { username: u } : null;
+    if (!u) return null;
+    const users = readJSON(USERS_KEY, []) || [];
+    const found = users.find((x) => x.username === u);
+    if (found) return { username: found.username, role: found.role };
+    return { username: u, role: null };
   }
   function loginUser(username) {
     localStorage.setItem(LOGGED_IN_KEY, username);
@@ -74,9 +79,8 @@
     initAuthUI();
   }
   function isAdmin() {
-    const u = localStorage.getItem(LOGGED_IN_KEY);
-    const users = readJSON(USERS_KEY, []);
-    return users.some((x) => x.username === u && x.role === "admin");
+    const u = currentUser();
+    return !!(u && u.role === "admin");
   }
 
   // ------------------ PRODUCTS CRUD ------------------
@@ -125,6 +129,11 @@
     return getPins().includes(id);
   }
   function togglePin(id) {
+    const user = currentUser();
+    if (!user) {
+      Modal.show(`<p>Please log in to pin listings.</p>`);
+      return;
+    }
     const pins = getPins();
     if (pins.includes(id)) {
       savePins(pins.filter((x) => x !== id));
@@ -136,13 +145,12 @@
       pins.push(id);
       savePins(pins);
     }
-    // re-render contexts that show pins
     renderHeroPinned();
-    renderProductsPage(currentPage);
+    if ($("#products-grid")) renderProductsPage(currentPage);
     renderHomeProducts(itemsToShow);
   }
 
-  // ------------------ WISHLIST ------------------
+  // ------------------ WISHLIST (kept but hidden on products page) ------------------
   function getWishlist() {
     return readJSON(WISHLIST_KEY, []) || [];
   }
@@ -150,6 +158,11 @@
     writeJSON(WISHLIST_KEY, arr);
   }
   function toggleWishlist(id) {
+    const user = currentUser();
+    if (!user) {
+      Modal.show("<p>Please log in to save listings.</p>");
+      return;
+    }
     let wl = getWishlist();
     if (wl.includes(id)) wl = wl.filter((x) => x !== id);
     else wl.push(id);
@@ -228,6 +241,7 @@
   }
 
   // ------------------ RENDER HELPERS ------------------
+  // full card used on home/profile; compact used for pinned grid
   function buildCard(product, compact = false) {
     const div = document.createElement("div");
     div.className = compact ? "card compact" : "card";
@@ -239,31 +253,50 @@
     const title = escapeHtml(product.title || "Untitled");
     const priceText = product.price ? `Rs. ${numberWithCommas(product.price)}` : "FREE";
 
-    const actions = compact
-      ? `<div class="actions"><button class="btn view-btn">View</button></div>`
-      : `<div class="actions">
-            <button class="btn view-btn">View</button>
-            <button class="btn delete-btn">Delete</button>
-            <button class="btn pin-btn">${isPinned(product.id) ? "Unpin" : "Pin"}</button>
-         </div>`;
+    // determine permissions
+    const u = currentUser();
+    const isOwner = u && u.username === product.owner;
+    const admin = isAdmin();
+
+    let actionsHtml = `<div class="actions"><button class="btn view-btn">View</button>`;
+
+    if (!compact) {
+      // Delete: only owner or admin
+      if (isOwner || admin) actionsHtml += `<button class="btn delete-btn">Delete</button>`;
+      // Pin: only logged-in users (not shown on products page because products page uses separate card builder)
+      if (u) actionsHtml += `<button class="btn pin-btn">${isPinned(product.id) ? "Unpin" : "Pin"}</button>`;
+    }
+
+    actionsHtml += `</div>`;
 
     div.innerHTML = `
       <div class="thumb"><img src="${img}" alt="${title}"></div>
       <div class="title">${title} ${pinned}</div>
       <div class="meta">by ${owner} ${product.city ? "• " + escapeHtml(product.city) : ""}</div>
       <div class="price">${priceText}</div>
-      ${actions}
+      ${actionsHtml}
     `;
 
     div.querySelector(".view-btn")?.addEventListener("click", () => openProductModal(product.id));
-    div.querySelector(".delete-btn")?.addEventListener("click", () => {
-      Confirm("Delete this listing?", (ok) => {
-        if (!ok) return;
-        removeProduct(product.id);
-        renderAllViews();
+
+    const delBtn = div.querySelector(".delete-btn");
+    if (delBtn) {
+      delBtn.addEventListener("click", () => {
+        // Confirm then delete — admin allowed to delete anyone; owner allowed to delete own
+        Confirm("Delete this listing?", (ok) => {
+          if (!ok) return;
+          removeProduct(product.id);
+          renderAllViews();
+        });
       });
-    });
-    div.querySelector(".pin-btn")?.addEventListener("click", () => togglePin(product.id));
+    }
+
+    const pinBtn = div.querySelector(".pin-btn");
+    if (pinBtn) {
+      pinBtn.addEventListener("click", () => {
+        togglePin(product.id);
+      });
+    }
 
     return div;
   }
@@ -294,7 +327,7 @@
     if (loadBtn) loadBtn.style.display = products.length > slice.length ? "inline-block" : "none";
   }
 
-  // ------------------ PRODUCTS PAGE: filtering + pagination ------------------
+  // ------------------ PRODUCTS PAGE: filtering + pagination (title-only search) ------------------
   let currentPage = 1;
   let productsCache = [];
 
@@ -307,8 +340,10 @@
     const sort = filters.sort || "newest";
 
     let list = all.filter((p) => {
-      const hay = ((p.title || "") + " " + (p.description || "") + " " + (p.owner || "") + " " + (p.city || "") + " " + (p.province || "")).toLowerCase();
-      if (q && !hay.includes(q)) return false;
+      // SEARCH BY TITLE ONLY (your requirement)
+      if (q) {
+        if (!((p.title || "").toLowerCase().includes(q))) return false;
+      }
       if (category && (p.category || "").toLowerCase() !== category.toLowerCase()) return false;
       if (min && (p.price || 0) < min) return false;
       if (max && max > 0 && (p.price || 0) > max) return false;
@@ -323,12 +358,12 @@
     return list;
   }
 
+  // Products page card: intentionally minimal — only "View" visible here per your request
   function buildProductCardForPage(p) {
     const card = document.createElement("div");
     card.className = "card";
     card.dataset.id = p.id;
     const thumb = escapeHtml((p.images || [])[0] || PLACEHOLDER_IMG);
-    const saved = getWishlist().includes(p.id);
     const pinned = isPinned(p.id);
 
     card.innerHTML = `
@@ -338,20 +373,10 @@
       <div class="price">${p.price ? "Rs. " + numberWithCommas(p.price) : "FREE"}</div>
       <div class="actions">
         <button class="btn btn-small view-btn">View</button>
-        <button class="btn btn-small pin-btn">${pinned ? "Unpin" : "Pin"}</button>
-        <button class="btn btn-small wishlist-btn">${saved ? "Saved" : "♡ Save"}</button>
       </div>
     `;
 
     card.querySelector(".view-btn")?.addEventListener("click", () => openProductModal(p.id));
-    card.querySelector(".pin-btn")?.addEventListener("click", () => {
-      togglePin(p.id);
-      renderProductsPage(currentPage);
-    });
-    card.querySelector(".wishlist-btn")?.addEventListener("click", () => {
-      toggleWishlist(p.id);
-      renderProductsPage(currentPage);
-    });
 
     return card;
   }
@@ -402,6 +427,7 @@
   }
 
   function readProductsPageFiltersFromDOM() {
+    // use search-box (products page) or home-search
     const q = ($("#search-box") && $("#search-box").value) || ($("#home-search") && $("#home-search").value) || "";
     const category = ($("#filter-category") && $("#filter-category").value) || "";
     const sort = ($("#filter-sort") && $("#filter-sort").value) || "newest";
@@ -448,7 +474,7 @@
     const desc = $("#modal-desc");
     const category = $("#modal-category");
     const price = $("#modal-price");
-    const location = $("#modal-location");
+    const locationEl = $("#modal-location");
     const seller = $("#modal-seller");
     const contact = $("#modal-contact");
     const thumbs = $("#modal-thumbs");
@@ -462,7 +488,7 @@
     desc.textContent = p.description || "";
     category.textContent = p.category || p.subcategory || "—";
     price.textContent = p.price ? numberWithCommas(p.price) : "FREE";
-    location.textContent = [p.city, p.province].filter(Boolean).join(", ") || "N/A";
+    locationEl.textContent = [p.city, p.province].filter(Boolean).join(", ") || "N/A";
     seller.textContent = p.owner || "guest";
     contact.textContent = p.contact || "N/A";
 
@@ -478,30 +504,33 @@
         img.onclick = () => {
           modalState.idx = i;
           if (image) image.src = modalState.images[modalState.idx];
-          // refresh active classes
           Array.from(thumbs.children).forEach((c, idx) => c.classList.toggle("active", idx === modalState.idx));
         };
         thumbs.appendChild(img);
       });
     }
 
+    const user = currentUser();
+
+    // Wishlist in modal: only show if logged in (but hide on products page cards per request)
     if (wishlistBtn) {
-      const saved = getWishlist().includes(p.id);
-      wishlistBtn.textContent = saved ? "Saved" : "♡ Save";
-      wishlistBtn.onclick = () => {
-        toggleWishlist(p.id);
-        wishlistBtn.textContent = getWishlist().includes(p.id) ? "Saved" : "♡ Save";
-        renderProductsPage(currentPage);
-      };
+      if (user) {
+        wishlistBtn.classList.remove("hidden");
+        const saved = getWishlist().includes(p.id);
+        wishlistBtn.textContent = saved ? "Saved" : "♡ Save";
+        wishlistBtn.onclick = () => {
+          toggleWishlist(p.id);
+          wishlistBtn.textContent = getWishlist().includes(p.id) ? "Saved" : "♡ Save";
+        };
+      } else {
+        wishlistBtn.classList.add("hidden");
+      }
     }
 
     if (contactBtn) {
       contactBtn.onclick = () => {
-        if (p.contact && p.contact.includes("@")) {
-          window.location.href = "mailto:" + p.contact;
-        } else {
-          alert("Contact: " + (p.contact || "N/A"));
-        }
+        if (p.contact && p.contact.includes("@")) window.location.href = "mailto:" + p.contact;
+        else alert("Contact: " + (p.contact || "N/A"));
       };
     }
 
@@ -510,23 +539,15 @@
         const url = window.location.origin + window.location.pathname + "#product-" + p.id;
         const data = { title: p.title, text: p.description || "", url };
         if (navigator.share) {
-          try {
-            await navigator.share(data);
-          } catch (err) {
-            console.warn(err);
-          }
+          try { await navigator.share(data); } catch (err) { console.warn(err); }
         } else {
-          try {
-            await navigator.clipboard.writeText(url);
-            alert("Link copied to clipboard.");
-          } catch {
-            prompt("Copy link:", url);
-          }
+          try { await navigator.clipboard.writeText(url); alert("Link copied to clipboard."); }
+          catch { prompt("Copy link:", url); }
         }
       };
     }
 
-    const user = currentUser();
+    // Edit/Delete controls: owner can edit & delete; admin can delete everyone but not edit others
     if (editLink && deleteBtn) {
       if (user && user.username === p.owner) {
         editLink.classList.remove("hidden");
@@ -541,7 +562,6 @@
           });
         };
       } else if (isAdmin()) {
-        // admin can also delete
         editLink.classList.add("hidden");
         deleteBtn.classList.remove("hidden");
         deleteBtn.onclick = () => {
@@ -598,35 +618,41 @@
     });
   }
 
-  // ------------------ SELL FORM ------------------
+  // ------------------ SELL FORM (robust to different field naming) ------------------
   function initSellForm() {
     const form = $("#sell-form");
     if (!form) return;
 
-    const imageInput = $("#image-input");
-    const thumbPreview = $("#thumb-preview");
-    const saveDraftBtn = $("#save-draft");
-    const expiryInput = $("#expiryDate");
+    // support either id-based inputs (sell-*) or name-based fields
+    const titleField = $("#sell-title") || form.querySelector('[name="title"]') || form.title;
+    const descField = $("#sell-desc") || form.querySelector('[name="description"]') || form.description;
+    const priceField = $("#sell-price") || form.querySelector('[name="price"]') || form.price;
+    const categoryField = $("#sell-category") || form.querySelector('[name="category"]') || form.category;
+    const provinceField = $("#sell-province") || form.querySelector('[name="province"]') || form.province;
+    const cityField = $("#sell-city") || form.querySelector('[name="city"]') || form.city;
+    const imageInput = $("#sell-images") || $("#image-input") || form.querySelector('[type="file"]');
+    const thumbPreview = $("#preview-images") || $("#thumb-preview");
+    const saveDraftBtn = $("#save-draft") || $("#save-draft-btn");
+    const expiryInput = $("#expiryDate") || form.querySelector('[name="expiryDate"]');
 
     let imageDataUrls = [];
     let editingProductId = null;
 
-    // detect edit
+    // detect edit via ?id=...
     const params = new URLSearchParams(window.location.search);
     if (params.has("id")) {
       const id = params.get("id");
       const p = getAllProducts().find((x) => x.id === id);
       if (p) {
         editingProductId = id;
-        if (form.title) form.title.value = p.title || "";
-        if (form.category) form.category.value = p.category || "";
-        if (form.subcategory) form.subcategory.value = p.subcategory || "";
-        if (form.price) form.price.value = p.price || "";
-        if (form.province) form.province.value = p.province || "";
-        if (form.city) form.city.value = p.city || "";
+        if (titleField) titleField.value = p.title || "";
+        if (descField) descField.value = p.description || "";
+        if (categoryField) categoryField.value = p.category || "";
+        if (priceField) priceField.value = p.price || "";
+        if (provinceField) provinceField.value = p.province || "";
+        if (cityField) cityField.value = p.city || "";
         if (form.contact) form.contact.value = p.contact || "";
-        if (form.description) form.description.value = p.description || "";
-        if (form.expiryDate && p.expiryDate) form.expiryDate.value = p.expiryDate;
+        if (expiryInput && p.expiryDate) expiryInput.value = p.expiryDate;
         imageDataUrls = p.images ? p.images.slice(0, MAX_IMAGES) : [];
         renderThumbs();
       }
@@ -636,7 +662,11 @@
       if (raw) {
         try {
           const d = JSON.parse(raw);
-          Object.keys(d).forEach((k) => { if (form[k]) form[k].value = d[k]; });
+          Object.keys(d).forEach((k) => {
+            const el = form.querySelector(`[name="${k}"]`) || form[k];
+            if (el) el.value = d[k];
+            if (titleField && k === "title" && !titleField.value) titleField.value = d[k];
+          });
         } catch (e) {
           console.warn("draft load failed", e);
         }
@@ -709,6 +739,7 @@
       alert("Draft saved locally.");
     });
 
+    // expiry default (7 days max)
     if (expiryInput) {
       const today = new Date();
       const max = new Date();
@@ -716,6 +747,39 @@
       expiryInput.min = today.toISOString().split("T")[0];
       expiryInput.max = max.toISOString().split("T")[0];
       expiryInput.value = expiryInput.value || expiryInput.max;
+    }
+
+    // price preview formatting (if preview element exists)
+    const previewPriceEl = $("#preview-price");
+    priceField?.addEventListener?.("input", () => {
+      if (!previewPriceEl) return;
+      const v = priceField.value ? Number(priceField.value) : 0;
+      previewPriceEl.textContent = v ? "NPR " + numberWithCommas(v) : "NPR 0";
+    });
+
+    // province->city quick map (small set, extend as needed)
+    const citiesByProvince = {
+      "1": ["Biratnagar", "Dharan", "Itahari", "Birtamode", "Damak"],
+      "2": ["Janakpur", "Birgunj", "Kalaiya", "Jaleshwar"],
+      "3": ["Kathmandu", "Lalitpur", "Bhaktapur", "Hetauda", "Banepa"],
+      "4": ["Pokhara", "Gorkha", "Baglung", "Waling"],
+      "5": ["Butwal", "Bhairahawa", "Nepalgunj", "Tansen"],
+      "6": ["Surkhet", "Jumla", "Dailekh"],
+      "7": ["Dhangadhi", "Mahendranagar", "Tikapur"]
+    };
+    if (provinceField && cityField) {
+      provinceField.addEventListener("change", () => {
+        cityField.innerHTML = "<option value=''>-- Select City --</option>";
+        const key = provinceField.value;
+        if (citiesByProvince[key]) {
+          citiesByProvince[key].forEach((c) => {
+            const o = document.createElement("option");
+            o.value = c;
+            o.textContent = c;
+            cityField.appendChild(o);
+          });
+        }
+      });
     }
 
     form.addEventListener("submit", async (e) => {
@@ -728,6 +792,7 @@
       }
       if (!confirm("Are you sure you want to publish this listing?")) return;
 
+      // if user selected files but we haven't processed into dataURLs
       if (imageInput && imageInput.files && imageInput.files.length && imageDataUrls.length === 0) {
         try {
           imageDataUrls = await filesToDataUrls(imageInput.files);
@@ -736,21 +801,29 @@
         }
       }
 
-      const fd = new FormData(form);
+      // read values robustly
+      const title = (titleField && titleField.value) || (form.title && form.title.value) || "";
+      const description = (descField && descField.value) || (form.description && form.description.value) || "";
+      const category = (categoryField && categoryField.value) || (form.category && form.category.value) || "";
+      const price = parseInt((priceField && priceField.value) || (form.price && form.price.value) || "0") || 0;
+      const contact = (form.contact && form.contact.value) || "";
+      const province = (provinceField && provinceField.value) || (form.province && form.province.value) || "";
+      const city = (cityField && cityField.value) || (form.city && form.city.value) || "";
+      const expiryDate = (expiryInput && expiryInput.value) || null;
+
       const payload = {
         id: editingProductId || uid("p"),
-        title: (fd.get("title") || "").trim(),
-        description: (fd.get("description") || "").trim(),
-        category: (fd.get("category") || "").trim(),
-        subcategory: (fd.get("subcategory") || "").trim(),
-        price: parseInt(fd.get("price") || "0") || 0,
-        contact: (fd.get("contact") || "").trim(),
+        title: title.trim(),
+        description: description.trim(),
+        category: category.trim(),
+        price: price,
+        contact: contact.trim(),
         images: imageDataUrls.slice(0, MAX_IMAGES),
         owner: user.username,
         createdAt: editingProductId ? getAllProducts().find((x) => x.id === editingProductId).createdAt : new Date().toISOString(),
-        expiryDate: fd.get("expiryDate") || null,
-        province: fd.get("province") || "",
-        city: fd.get("city") || "",
+        expiryDate: expiryDate,
+        province: province,
+        city: city
       };
 
       if (editingProductId) updateProduct(editingProductId, payload);
@@ -769,15 +842,51 @@
       renderThumbs();
       renderAllViews();
 
-      if (!editingProductId) {
-        // go to products after creation
-        window.location.href = "products.html";
-      }
+      if (!editingProductId) window.location.href = "products.html";
     });
+
+    // helper: if preview elements exist, update live preview fields (keeps compatibility with the sell.html you showed)
+    const previewTitle = $("#preview-title");
+    const previewDesc = $("#preview-desc");
+    const previewImages = $("#preview-images");
+    const previewBy = $("#preview-by");
+    const previewAddress = $("#preview-address");
+
+    if (titleField && previewTitle) titleField.addEventListener("input", () => previewTitle.textContent = titleField.value || "Your Title");
+    if (descField && previewDesc) descField.addEventListener("input", () => previewDesc.textContent = descField.value || "Your description will appear here.");
+    if (priceField && previewPriceEl) priceField.addEventListener("input", () => previewPriceEl.textContent = priceField.value ? "NPR " + numberWithCommas(priceField.value) : "NPR 0");
+    if (provinceField && previewAddress) provinceField.addEventListener("change", () => previewAddress.textContent = "Address: " + (provinceField.options[provinceField.selectedIndex].text || "-"));
+    if (cityField && previewAddress) cityField.addEventListener("change", () => {
+      const prov = provinceField ? provinceField.options[provinceField.selectedIndex].text || "" : "";
+      const city = cityField.value || "";
+      previewAddress.textContent = "Address: " + city + (prov ? ", " + prov : "");
+    });
+    if (imageInput && previewImages) {
+      imageInput.addEventListener("change", async () => {
+        previewImages.innerHTML = "";
+        const files = Array.from(imageInput.files).slice(0, MAX_IMAGES);
+        for (const f of files) {
+          const data = await new Promise((res) => {
+            const r = new FileReader();
+            r.onload = () => res(r.result);
+            r.readAsDataURL(f);
+          });
+          const img = document.createElement("img");
+          img.src = data;
+          previewImages.appendChild(img);
+        }
+      });
+    }
   }
 
   // ------------------ SEARCH & FILTERS BINDING ------------------
   function initSearchAndFilters() {
+    // hide header home-search form on index if requested (you wanted the top search to disappear on index)
+    if (location.pathname.endsWith("index.html") || location.pathname === "/" || location.pathname === "") {
+      const hs = $("#home-search-form");
+      if (hs) hs.style.display = "none";
+    }
+
     const homeSearch = $("#home-search");
     const pageSearch = $("#search-box");
     const filterCategory = $("#filter-category");
@@ -797,7 +906,7 @@
     });
   }
 
-  // ------------------ PROFILE PAGE ------------------
+  // ------------------ PROFILE PAGE (role hierarchy) ------------------
   function renderProfilePage() {
     const wrap = $("#profile-listings");
     if (!wrap) return;
@@ -806,9 +915,70 @@
       wrap.innerHTML = "<p>You must be logged in to view your listings.</p>";
       return;
     }
-    const my = getActiveProducts().filter((p) => p.owner === user.username);
+
+    // Admin: show all listings (admin cannot edit others, only delete).
+    // Normal user: show only their own (edit+delete).
+    const products = isAdmin() ? getActiveProducts() : getActiveProducts().filter((p) => p.owner === user.username);
     wrap.innerHTML = "";
-    my.forEach((p) => wrap.appendChild(buildCard(p)));
+
+    if (!products.length) {
+      const empty = $("#profile-empty");
+      if (empty) empty.style.display = "block";
+      return;
+    } else {
+      const empty = $("#profile-empty");
+      if (empty) empty.style.display = "none";
+    }
+
+    products.forEach((p) => {
+      const card = document.createElement("div");
+      card.className = "listing-card";
+      card.innerHTML = `
+        <div class="listing-head">
+          <div>
+            <div class="listing-title">${escapeHtml(p.title)}</div>
+            <div class="listing-meta">${p.price ? "Rs. " + numberWithCommas(p.price) : "FREE"} • ${escapeHtml(p.city || "")} • ${new Date(p.createdAt).toLocaleDateString()}</div>
+          </div>
+          <div class="listing-actions"></div>
+        </div>
+        <p class="muted small">${escapeHtml(p.description || "").slice(0, 140)}${(p.description || "").length>140 ? "…" : ""}</p>
+      `;
+      const actions = card.querySelector(".listing-actions");
+      // owner editing
+      if (user.username === p.owner) {
+        const edit = document.createElement("a");
+        edit.className = "btn btn-small";
+        edit.href = "sell.html?id=" + encodeURIComponent(p.id);
+        edit.textContent = "Edit";
+        actions.appendChild(edit);
+        const del = document.createElement("button");
+        del.className = "btn btn-small btn-danger";
+        del.textContent = "Delete";
+        del.addEventListener("click", () => {
+          Confirm("Delete this listing?", (ok) => {
+            if (!ok) return;
+            removeProduct(p.id);
+            renderAllViews();
+          });
+        });
+        actions.appendChild(del);
+      } else if (isAdmin()) {
+        // admin can remove others, but not edit
+        const del = document.createElement("button");
+        del.className = "btn btn-small btn-danger";
+        del.textContent = "Remove";
+        del.addEventListener("click", () => {
+          Confirm("Admin remove this listing?", (ok) => {
+            if (!ok) return;
+            removeProduct(p.id);
+            renderAllViews();
+          });
+        });
+        actions.appendChild(del);
+      }
+
+      wrap.appendChild(card);
+    });
   }
 
   // ------------------ GLOBAL RENDERER ------------------
@@ -841,9 +1011,6 @@
           }
         });
       });
-
-      // enhance header small dropdown if present: show profile & logout under a dropdown
-      // many HTML variants use <span id="user-info">; if you want a dropdown add markup accordingly
     } else {
       if (loginLink) loginLink.style.display = "inline-block";
       if (userInfo) userInfo.style.display = "none";
@@ -865,9 +1032,7 @@
 
     const pm = $("#product-modal");
     if (pm) {
-      pm.addEventListener("click", (ev) => {
-        if (ev.target === pm) closeModal();
-      });
+      pm.addEventListener("click", (ev) => { if (ev.target === pm) closeModal(); });
     }
   }
 
