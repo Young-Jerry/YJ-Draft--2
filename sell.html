@@ -103,6 +103,15 @@
     </div>
   </main>
 
+  <!-- Success Modal -->
+  <div id="sell-success" class="nb-modal">
+    <div class="nb-modal-content">
+      <h2>Listing Published 🎉</h2>
+      <p>Your item has been successfully listed on Nepali Bazar. It will expire in 7 days.</p>
+      <button class="close">Close</button>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="site-footer">
     <div class="container footer-inner">
@@ -175,6 +184,35 @@
           alert("You can upload max 6 images.");
           e.target.value = "";
         }
+      });
+
+      // Form submit -> show modal
+      const sellForm = document.getElementById("sell-form");
+      sellForm.addEventListener("submit", function(e){
+        e.preventDefault();
+
+        // (Here you’d normally save the listing)
+        const modal = document.getElementById("sell-success");
+        modal.style.display = "flex";
+
+        // Close on button
+        modal.querySelector(".close").onclick = () => modal.style.display = "none";
+
+        // Close on ESC
+        document.addEventListener("keydown", function escHandler(ev){
+          if(ev.key === "Escape"){
+            modal.style.display = "none";
+            document.removeEventListener("keydown", escHandler);
+          }
+        });
+
+        // Close when clicking outside
+        window.onclick = (event) => {
+          if(event.target === modal) modal.style.display = "none";
+        };
+
+        // Reset form
+        sellForm.reset();
       });
     });
   </script>
