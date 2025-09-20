@@ -10,16 +10,36 @@
 
   <!-- Main CSS -->
   <link rel="stylesheet" href="css/styles.css">
+
   <style>
     .profile-header-note { 
       color: var(--muted); 
       margin-bottom: 1rem; 
     }
+    .empty-state {
+      padding: 2rem;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .admin-badge {
+      background: #ff4444;
+      color: #fff;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 6px;
+      margin-left: 5px;
+    }
+    .sidebar-card ul {
+      margin: 0.5rem 0 0;
+      padding-left: 1.2rem;
+      font-size: 0.9rem;
+    }
+    .sidebar-card ul li {
+      margin: 0.3rem 0;
+    }
   </style>
-
-  <!-- Config + Data -->
-  <script src="js/config.js"></script>
-  <script src="js/product-data.js"></script>
 </head>
 <body class="dark-bg">
   <!-- Header -->
@@ -29,7 +49,7 @@
         <div class="logo">NB</div>
         <div class="brand-text">
           <div class="brand-title"><span class="site-name">Nepali Bazar</span></div>
-          <div class="brand-sub">Your profile & listings</div>
+          <div class="brand-sub">Buy · Sell · Connect</div>
         </div>
       </a>
       <nav class="nav">
@@ -50,23 +70,28 @@
           <a class="btn btn-primary" href="sell.html">+ Create Listing</a>
         </div>
       </div>
-
       <p class="profile-header-note muted small">
-        Here you can view and manage items you’ve posted.  
-        You can only remove your own listings (Admin <strong>sohaum</strong> can remove any).
+        Manage the items you’ve posted.  
+        <br><strong>Admin</strong><span class="admin-badge">sohaum</span> can view & remove all listings.
       </p>
 
+      <!-- Listings -->
       <div id="profile-listings" class="card-grid"></div>
+      <div id="profile-empty" class="empty-state" style="display:none;">
+        <p>You haven’t posted any listings yet.</p>
+        <a href="sell.html" class="btn btn-primary">+ Create Your First Listing</a>
+      </div>
     </section>
 
     <aside class="sidebar">
-      <div class="ad-slot"></div>
-      <div class="ad-slot small"></div>
-
       <div class="sidebar-card">
         <h3>Profile Actions</h3>
         <p class="muted small">Signed in as <strong id="profile-username"></strong></p>
-        <p class="muted small">Only items you posted are shown here.</p>
+        <ul>
+          <li><a href="profile.html">My Listings</a></li>
+          <li><a href="sell.html">Create Listing</a></li>
+          <li><a href="#" id="logout-btn">Logout</a></li>
+        </ul>
       </div>
     </aside>
   </main>
@@ -80,7 +105,7 @@
   </footer>
 
   <!-- Modal -->
-  <div id="nb-modal" class="nb-modal" style="display:none;">
+  <div id="nb-modal" class="nb-modal" role="dialog" aria-modal="true" style="display:none;">
     <div class="nb-modal-content">
       <button class="nb-modal-close">✕</button>
       <div id="nb-modal-body"></div>
@@ -94,7 +119,7 @@
       // footer year
       document.getElementById('year').textContent = new Date().getFullYear();
 
-      // enforce login
+      // auth check
       const user = localStorage.getItem('nb_logged_in_user');
       if(!user){
         alert('Please log in to access your profile.');
@@ -102,14 +127,14 @@
         return;
       }
 
-      // header auth state
+      // header auth links
       const authLinks = document.getElementById("auth-links");
       authLinks.innerHTML = `
-        <span class="nav-link">Hi, <b>${user}</b></span> |
-        <a href="#" id="logout-btn" class="nav-link">Logout</a> |
+        <span class="nav-link">Hi, <b>${user}</b>${user==="sohaum" ? '<span class="admin-badge">Admin</span>' : ''}</span> |
+        <a href="#" id="logout-btn-header" class="nav-link">Logout</a> |
         <a href="profile.html" class="nav-link active">Profile</a>
       `;
-      document.getElementById("logout-btn").addEventListener("click", (e) => {
+      document.getElementById("logout-btn-header").addEventListener("click", (e) => {
         e.preventDefault();
         if(confirm("Are you sure you want to logout?")){
           localStorage.removeItem("nb_logged_in_user");
@@ -117,11 +142,18 @@
         }
       });
 
-      // show username in sidebar
+      // sidebar username
       document.getElementById('profile-username').textContent = user;
 
-      // render listings
-      if(window.renderProfilePage) window.renderProfilePage();
+      // render profile listings (delegated to app.js)
+      if(window.renderProfilePage) window.renderProfilePage(user);
+
+      // modal close handlers
+      const modal = document.getElementById("nb-modal");
+      const closeModal = () => modal.style.display = "none";
+      modal.querySelector(".nb-modal-close").addEventListener("click", closeModal);
+      window.addEventListener("click", e => { if(e.target === modal) closeModal(); });
+      document.addEventListener("keydown", e => { if(e.key === "Escape") closeModal(); });
     });
   </script>
 </body>
