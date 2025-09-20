@@ -14,7 +14,8 @@
   <style>
     .profile-header-note { 
       color: var(--muted); 
-      margin-bottom: 1rem; 
+      margin-bottom: 1.2rem; 
+      font-size: 0.9rem;
     }
     .empty-state {
       padding: 2rem;
@@ -38,6 +39,46 @@
     }
     .sidebar-card ul li {
       margin: 0.3rem 0;
+    }
+
+    /* Listing card styling */
+    .listing-card {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 1rem;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(0,255,200,0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      transition: transform 0.2s;
+    }
+    .listing-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 18px rgba(0,255,200,0.25);
+    }
+    .listing-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .listing-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .listing-meta {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .listing-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .listing-actions .btn {
+      font-size: 0.8rem;
+      padding: 4px 10px;
     }
   </style>
 </head>
@@ -72,7 +113,7 @@
       </div>
       <p class="profile-header-note muted small">
         Manage the items you’ve posted.  
-        <br><strong>Admin</strong><span class="admin-badge">sohaum</span> can view & remove all listings.
+        <br>Admins can view all listings but cannot edit other users’ listings — only remove them if necessary.
       </p>
 
       <!-- Listings -->
@@ -145,7 +186,7 @@
       // sidebar username
       document.getElementById('profile-username').textContent = user;
 
-      // render profile listings (delegated to app.js)
+      // render profile listings with role hierarchy
       if(window.renderProfilePage) window.renderProfilePage(user);
 
       // modal close handlers
