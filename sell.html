@@ -12,20 +12,30 @@
   <link rel="stylesheet" href="css/styles.css">
 
   <style>
-    /* Extra styles for preview & thumbnails */
-    .preview-panel {
-      margin-top: 20px;
-      padding: 15px;
-      border: 1px solid #333;
-      border-radius: 10px;
+    /* Extra sell page styles */
+    .sell-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    .form-wrapper, .preview-panel {
       background: #111;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,255,200,0.15);
+    }
+    .form-wrapper h2, .preview-panel h2 {
+      font-family: 'Orbitron', sans-serif;
+      margin-bottom: 1rem;
     }
     .preview-card {
-      border: 1px solid #444;
+      border: 1px solid #333;
       border-radius: 8px;
-      padding: 10px;
+      padding: 15px;
       background: #1a1a1a;
       color: #fff;
+      box-shadow: 0 0 10px rgba(0,255,200,0.1);
     }
     .preview-images {
       display: flex;
@@ -38,12 +48,7 @@
       height: 80px;
       object-fit: cover;
       border-radius: 6px;
-      border: 1px solid #333;
-      position: relative;
-    }
-    .thumb-wrapper {
-      position: relative;
-      display: inline-block;
+      border: 2px solid var(--primary);
     }
     .remove-thumb {
       position: absolute;
@@ -57,6 +62,15 @@
       height: 20px;
       font-size: 12px;
       cursor: pointer;
+      box-shadow: 0 0 6px rgba(0,0,0,0.6);
+    }
+    .nb-modal .nb-modal-content {
+      background: #111;
+      border-radius: 12px;
+      padding: 2rem;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(0,255,200,0.25);
+      text-align: center;
     }
   </style>
 </head>
@@ -72,13 +86,10 @@
           <div class="brand-sub">Buy · Sell · Connect</div>
         </div>
       </a>
-
       <nav class="nav">
         <a href="index.html" class="nav-link">Home</a>
         <a href="products.html" class="nav-link">Products</a>
         <a href="sell.html" class="nav-link cta active">Sell</a>
-
-        <!-- Login/Dropdown -->
         <a href="login.html" id="login-link" class="nav-link">Login</a>
         <div id="user-dropdown" class="dropdown" style="display:none;">
           <button class="dropbtn">
@@ -95,24 +106,63 @@
 
   <!-- Main -->
   <main class="container">
-    <div class="form-wrapper">
-      <h2>Create a Listing</h2>
-      <p class="muted">Fill in the details carefully. Listings expire after 7 days.</p>
+    <div class="sell-layout">
 
-      <!-- FORM ... (unchanged) -->
-      <!-- your whole sell-form and preview goes here (same as you pasted) -->
+      <!-- Form -->
+      <div class="form-wrapper">
+        <h2>Create a Listing</h2>
+        <p class="muted">Fill in the details carefully. Listings expire after 7 days.</p>
+
+        <form id="sell-form">
+          <label>Title</label>
+          <input type="text" id="sell-title" required class="input-glow" />
+
+          <label>Description</label>
+          <textarea id="sell-desc" rows="4" required class="input-glow"></textarea>
+
+          <label>Price (NPR)</label>
+          <input type="number" id="sell-price" min="1" required class="input-glow" />
+
+          <label>Category</label>
+          <select id="sell-category" class="input-glow">
+            <option>Electronics</option>
+            <option>Vehicles</option>
+            <option>Real Estate</option>
+            <option>Fashion</option>
+            <option>Services</option>
+            <option>Other</option>
+          </select>
+
+          <label>Images</label>
+          <input type="file" id="sell-images" accept="image/*" multiple class="input-glow" />
+
+          <button type="submit" class="btn btn-primary neon-btn" style="margin-top:1rem;">Publish Listing</button>
+        </form>
+      </div>
+
+      <!-- Live Preview -->
+      <div class="preview-panel">
+        <h2>Live Preview</h2>
+        <div class="preview-card">
+          <h3 id="preview-title">Your Title</h3>
+          <p id="preview-price" class="muted">NPR 0</p>
+          <p id="preview-desc">Your description will appear here.</p>
+          <div class="preview-images" id="preview-images"></div>
+        </div>
+      </div>
+
     </div>
   </main>
 
   <!-- Success Modal -->
-  <div id="sell-success" class="nb-modal">
+  <div id="sell-success" class="nb-modal" style="display:none;">
     <div class="nb-modal-content">
       <h2>Listing Published 🎉</h2>
       <p>Your item has been successfully listed on Nepali Bazar. It will expire in 7 days.</p>
       <div style="margin-top:15px;">
-        <a href="products.html" class="btn btn-primary">Go to Shop</a>
+        <a href="products.html" class="btn btn-primary neon-btn">Go to Shop</a>
         <a href="profile.html" class="btn btn-ghost">View My Listings</a>
-        <button class="btn close">Close</button>
+        <button class="btn btn-ghost close">Close</button>
       </div>
     </div>
   </div>
@@ -128,7 +178,70 @@
   <!-- Scripts -->
   <script src="js/app.js"></script>
   <script>
-    // your existing DOMContentLoaded JS from before
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("year").textContent = new Date().getFullYear();
+
+      const user = localStorage.getItem("nb_logged_in_user");
+      const loginLink = document.getElementById("login-link");
+      const userDropdown = document.getElementById("user-dropdown");
+      if(user){
+        loginLink.style.display = "none";
+        userDropdown.style.display = "inline-block";
+        document.getElementById("username-display").textContent = user;
+        document.getElementById("logout-btn").addEventListener("click", e => {
+          e.preventDefault();
+          if(confirm("Logout?")){
+            localStorage.removeItem("nb_logged_in_user");
+            location.href = "index.html";
+          }
+        });
+      }
+
+      // live preview
+      const titleInput = document.getElementById("sell-title");
+      const descInput = document.getElementById("sell-desc");
+      const priceInput = document.getElementById("sell-price");
+      const imgInput = document.getElementById("sell-images");
+
+      titleInput.addEventListener("input", () => {
+        document.getElementById("preview-title").textContent = titleInput.value || "Your Title";
+      });
+      descInput.addEventListener("input", () => {
+        document.getElementById("preview-desc").textContent = descInput.value || "Your description will appear here.";
+      });
+      priceInput.addEventListener("input", () => {
+        document.getElementById("preview-price").textContent = priceInput.value ? "NPR " + priceInput.value : "NPR 0";
+      });
+      imgInput.addEventListener("change", () => {
+        const previewImages = document.getElementById("preview-images");
+        previewImages.innerHTML = "";
+        [...imgInput.files].forEach(file => {
+          const reader = new FileReader();
+          reader.onload = e => {
+            const img = document.createElement("img");
+            img.src = e.target.result;
+            previewImages.appendChild(img);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
+      // form submit
+      document.getElementById("sell-form").addEventListener("submit", e => {
+        e.preventDefault();
+        if(window.handleSellFormSubmit){
+          window.handleSellFormSubmit();
+        }
+        document.getElementById("sell-success").style.display = "block";
+      });
+
+      // success modal close
+      document.querySelectorAll("#sell-success .close").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.getElementById("sell-success").style.display = "none";
+        });
+      });
+    });
   </script>
 </body>
 </html>
