@@ -24,6 +24,7 @@ body {
   line-height: 1.6;
 }
 .container { max-width: var(--maxwidth); margin: 0 auto; padding: 20px; }
+.muted { color: var(--muted); }
 
 /* === Header === */
 .site-header {
@@ -88,27 +89,10 @@ body {
   transition: var(--transition);
 }
 .user-dropdown a:hover {
-  background: rgba(255,255,255,0.08);
+  background: rgba(0,230,255,0.08);
   color: var(--neon-1);
 }
 .user-menu:hover .user-dropdown { display: block; }
-
-/* Header Search */
-#header-search {
-  padding: 10px 16px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.05);
-  color: #fff; font-size: 0.95rem;
-  transition: var(--transition);
-  min-width: 220px;
-}
-#header-search:focus {
-  border-color: var(--neon-1);
-  box-shadow: 0 0 12px var(--neon-1);
-  background: rgba(0,230,255,0.1);
-  outline: none;
-}
 
 /* === Hero === */
 .hero {
@@ -197,7 +181,7 @@ button.btn, .btn {
   to { box-shadow: 0 0 20px var(--neon-2); }
 }
 
-/* === Forms (Sell Page, Login, etc.) === */
+/* === Forms === */
 .form-wrapper {
   max-width: 800px; margin: 2rem auto;
   padding: 2rem;
@@ -230,6 +214,15 @@ form textarea { resize: vertical; min-height: 100px; }
 }
 .form-actions .btn { flex: 1; max-width: 200px; text-align: center; }
 
+/* Dropdowns / Selects */
+select option {
+  background: #0b0f1a;
+  color: #fff;
+}
+select:hover, select:focus {
+  background: rgba(0,230,255,0.05);
+}
+
 /* === Sidebar, Ads, Footer === */
 .sidebar { position: sticky; top: 100px; }
 .ad-slot {
@@ -248,15 +241,26 @@ form textarea { resize: vertical; min-height: 100px; }
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.06);
 }
+.sidebar-card ul { margin: 0.5rem 0 0; padding-left: 1.2rem; font-size: 0.9rem; }
+.sidebar-card ul li { margin: 0.3rem 0; }
+
 .site-footer {
   margin-top: 3rem; padding: 2rem;
   background: rgba(0,0,0,0.3);
   text-align: center; font-size: 0.9rem;
   border-top: 1px solid rgba(255,255,255,0.08);
 }
-.muted { color: var(--muted); }
 
-/* === Modal (Generic & Confirm) === */
+/* === Empty State === */
+.empty-state {
+  padding: 2rem;
+  border: 1px dashed var(--border, rgba(255,255,255,0.2));
+  border-radius: 12px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* === Modal === */
 .nb-modal {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.7);
