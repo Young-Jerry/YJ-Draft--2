@@ -18,20 +18,6 @@
       font-family: "Inter", sans-serif;
     }
 
-    /* Header search */
-    .search-box {
-      display: inline-block;
-      margin-left: 20px;
-    }
-    .search-box input {
-      padding: 6px 10px;
-      border-radius: 6px;
-      border: 1px solid #444;
-      background: #111;
-      color: #fff;
-      min-width: 220px;
-    }
-
     /* Pinned ads grid */
     .pinned-grid {
       display: flex;
@@ -198,11 +184,6 @@
         </div>
       </a>
 
-      <!-- Search -->
-      <form id="home-search-form" class="search-box">
-        <input type="text" id="home-search" placeholder="Search for item..." />
-      </form>
-
       <nav class="nav">
         <a href="products.html" class="nav-link">Shop</a>
         <a href="sell.html" class="nav-link cta">Post Ad</a>
@@ -302,6 +283,7 @@
 
       // Auth handling
       const user = localStorage.getItem("nb_logged_in_user");
+      const role = localStorage.getItem("nb_user_role"); // 'admin' | 'user' | null
       const loginLink = document.getElementById("login-link");
       const userDropdown = document.getElementById("user-dropdown");
       const usernameDisplay = document.getElementById("username-display");
@@ -315,9 +297,18 @@
           e.preventDefault();
           if (confirm("Are you sure you want to log out?")) {
             localStorage.removeItem("nb_logged_in_user");
+            localStorage.removeItem("nb_user_role");
             location.reload();
           }
         });
+      }
+
+      // Role-based Pinned Ads visibility
+      const pinnedSection = document.getElementById("pinned-ads");
+      if (role === "admin") {
+        pinnedSection.style.display = "flex"; // visible
+      } else {
+        pinnedSection.style.display = "none"; // hide for normal + visitors
       }
 
       // User dropdown toggle
@@ -334,16 +325,6 @@
         });
       }
 
-      // Search form
-      document.getElementById("home-search-form").addEventListener("submit", (e) => {
-        e.preventDefault();
-        const q = document.getElementById("home-search").value.trim();
-        if (q) {
-          localStorage.setItem("nb_search_query", q);
-          window.location.href = "products.html";
-        }
-      });
-
       // Modal handling
       const modal = document.getElementById("nb-modal");
       const modalClose = document.getElementById("modal-close");
@@ -355,7 +336,7 @@
         if (e.target === modal) modal.classList.remove("active");
       });
 
-      // Load More button (we'll connect this with app.js renderHomeProducts)
+      // Load More button
       let itemsToShow = 10;
       const loadMoreBtn = document.getElementById("load-more-btn");
       if (loadMoreBtn) {
