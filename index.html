@@ -141,6 +141,49 @@
     }
     .carousel .arrow.left { left: 10px; }
     .carousel .arrow.right { right: 10px; }
+
+    /* Dropdown */
+    .user-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .user-dropdown .dropdown-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #fff;
+      font-size: 14px;
+    }
+    .user-dropdown .dropdown-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      min-width: 150px;
+      padding: 6px 0;
+      z-index: 1000;
+    }
+    .user-dropdown .dropdown-menu a {
+      display: block;
+      padding: 8px 12px;
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .user-dropdown .dropdown-menu a:hover {
+      background: #ff0055;
+    }
+    .user-dropdown.active .dropdown-menu {
+      display: block;
+    }
+
+    /* Load more */
+    .load-more-wrap {
+      text-align: center;
+      margin: 20px 0;
+    }
   </style>
 </head>
 <body>
@@ -165,11 +208,16 @@
         <a href="sell.html" class="nav-link cta">Post Ad</a>
         <!-- Auth Links -->
         <a href="login.html" id="login-link" class="nav-link">Login</a>
-        <span id="user-info" class="nav-link" style="display:none;">
-          Hi, <span id="username-display"></span> |
-          <a href="#" id="logout-btn" class="nav-link">Logout</a> |
-          <a href="profile.html" id="profile-link" class="nav-link">Profile</a>
-        </span>
+        <div id="user-dropdown" class="user-dropdown" style="display:none;">
+          <button id="user-btn" class="nav-link dropdown-toggle">
+            <span id="username-display"></span> ▼
+          </button>
+          <div id="dropdown-menu" class="dropdown-menu">
+            <a href="profile.html">Profile</a>
+            <a href="my-listings.html">My Listings</a>
+            <a href="#" id="logout-btn">Logout</a>
+          </div>
+        </div>
       </nav>
     </div>
   </header>
@@ -205,6 +253,9 @@
       </div>
       <div class="card-grid" id="home-grid">
         <!-- JS injects product cards -->
+      </div>
+      <div class="load-more-wrap">
+        <button id="load-more-btn" class="btn btn-ghost">Load More</button>
       </div>
     </div>
 
@@ -253,12 +304,12 @@
       // Auth handling
       const user = localStorage.getItem("nb_logged_in_user");
       const loginLink = document.getElementById("login-link");
-      const userInfo = document.getElementById("user-info");
+      const userDropdown = document.getElementById("user-dropdown");
       const usernameDisplay = document.getElementById("username-display");
 
       if (user) {
         loginLink.style.display = "none";
-        userInfo.style.display = "inline-block";
+        userDropdown.style.display = "inline-block";
         usernameDisplay.textContent = user;
 
         document.getElementById("logout-btn").addEventListener("click", (e) => {
@@ -266,6 +317,20 @@
           if (confirm("Are you sure you want to log out?")) {
             localStorage.removeItem("nb_logged_in_user");
             location.reload();
+          }
+        });
+      }
+
+      // User dropdown toggle
+      const userBtn = document.getElementById("user-btn");
+      if (userBtn) {
+        userBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          userDropdown.classList.toggle("active");
+        });
+        window.addEventListener("click", (e) => {
+          if (!userDropdown.contains(e.target)) {
+            userDropdown.classList.remove("active");
           }
         });
       }
@@ -280,10 +345,9 @@
         }
       });
 
-      // Modal handling (close by X, ESC, background)
+      // Modal handling
       const modal = document.getElementById("nb-modal");
       const modalClose = document.getElementById("modal-close");
-
       modalClose.addEventListener("click", () => modal.classList.remove("active"));
       window.addEventListener("keydown", (e) => {
         if (e.key === "Escape") modal.classList.remove("active");
@@ -291,6 +355,18 @@
       modal.addEventListener("click", (e) => {
         if (e.target === modal) modal.classList.remove("active");
       });
+
+      // Load More button (we'll connect this with app.js renderHomeProducts)
+      let itemsToShow = 10;
+      const loadMoreBtn = document.getElementById("load-more-btn");
+      if (loadMoreBtn) {
+        loadMoreBtn.addEventListener("click", () => {
+          itemsToShow += 10;
+          if (typeof renderHomeProducts === "function") {
+            renderHomeProducts(itemsToShow);
+          }
+        });
+      }
     });
   </script>
 </body>
