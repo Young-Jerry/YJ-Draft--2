@@ -10,35 +10,6 @@
 
   <!-- Styles -->
   <link rel="stylesheet" href="css/styles.css">
-  <style>
-    /* Filters layout fix */
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .controls .input,
-    .controls .select {
-      padding: 8px 12px;
-      border: 1px solid #444;
-      border-radius: 6px;
-      background: #111;
-      color: #fff;
-      min-width: 180px;
-      flex: 1;
-    }
-    /* Ad hover animation */
-    .ad-slot img {
-      width: 100%;
-      border-radius: 10px;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    .ad-slot img:hover {
-      transform: scale(1.05);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-    }
-  </style>
 </head>
 <body class="dark-bg">
 
@@ -73,12 +44,17 @@
       <div class="section-head">
         <h2>All Listings</h2>
         <div class="controls">
-          <input id="search-box" class="input" placeholder="Search by title, location, or seller">
+          <input id="search-box" class="input" placeholder="Search by title, description, location, or seller">
           <select id="filter-category" class="select">
             <option value="">All Categories</option>
             <option value="Electronics">Electronics</option>
+            <option value="Vehicles">Vehicles</option>
+            <option value="Books">Books</option>
+            <option value="Clothing">Clothing</option>
+            <option value="Furniture">Furniture</option>
             <option value="Sports">Sports</option>
             <option value="Music">Music</option>
+            <option value="Other">Other</option>
           </select>
           <select id="filter-sort" class="select">
             <option value="newest">Newest</option>
@@ -115,6 +91,38 @@
     </aside>
   </main>
 
+  <!-- Product View Modal -->
+  <div id="product-modal" class="modal hidden">
+    <div class="modal-content">
+      <button class="modal-close" id="modal-close">&times;</button>
+      <div class="modal-gallery">
+        <button class="gallery-prev" id="gallery-prev">&#10094;</button>
+        <img id="modal-image" src="" alt="Product Image">
+        <button class="gallery-next" id="gallery-next">&#10095;</button>
+      </div>
+      <div class="modal-details">
+        <h3 id="modal-title"></h3>
+        <p id="modal-desc"></p>
+        <p><strong>Category:</strong> <span id="modal-category"></span></p>
+        <p><strong>Price:</strong> Rs. <span id="modal-price"></span></p>
+        <p><strong>Location:</strong> <span id="modal-location"></span></p>
+        <p><strong>Seller:</strong> <span id="modal-seller"></span></p>
+        <p><strong>Contact:</strong> <span id="modal-contact"></span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirm-modal" class="modal hidden">
+    <div class="modal-content small">
+      <p id="confirm-message">Are you sure?</p>
+      <div class="modal-actions">
+        <button id="confirm-yes" class="btn btn-primary">Yes</button>
+        <button id="confirm-no" class="btn btn-ghost">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="site-footer">
     <div class="container footer-inner">
@@ -127,42 +135,7 @@
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       // Footer year
-      const yr = document.getElementById("year");
-      if (yr) yr.textContent = new Date().getFullYear();
-
-      // preload demo products if storage empty
-      if (!localStorage.getItem("nb_products_v1")) {
-        const demoProducts = [
-          {
-            title: "Apple iPhone 14",
-            description: "128GB, Black, brand new.",
-            price: 120000,
-            currency: "Rs.",
-            category: "Electronics",
-            seller: "demo",
-            images: ["assets/images/iphone.jpg"]
-          },
-          {
-            title: "Mountain Bike",
-            description: "Perfect for city & trails.",
-            price: 25000,
-            currency: "Rs.",
-            category: "Sports",
-            seller: "demo",
-            images: ["assets/images/bike.jpg"]
-          },
-          {
-            title: "Guitar",
-            description: "Acoustic, great condition.",
-            price: 8000,
-            currency: "Rs.",
-            category: "Music",
-            seller: "demo",
-            images: ["assets/images/guitar.jpg"]
-          }
-        ];
-        localStorage.setItem("nb_products_v1", JSON.stringify(demoProducts));
-      }
+      document.getElementById("year").textContent = new Date().getFullYear();
 
       // Auth handling
       const user = localStorage.getItem("nb_logged_in_user");
@@ -174,11 +147,9 @@
         loginLink.style.display = "none";
         userInfo.style.display = "inline-block";
         usernameDisplay.textContent = user;
-
         document.getElementById("logout-btn").addEventListener("click", (e) => {
           e.preventDefault();
-          localStorage.removeItem("nb_logged_in_user");
-          location.reload();
+          // logout will use confirmation modal via app.js
         });
       } else {
         loginLink.style.display = "inline-block";
